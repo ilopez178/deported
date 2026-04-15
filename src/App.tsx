@@ -8,7 +8,7 @@ import type { Question } from '@types'
 
 const QUIZ_LENGTH = 10
 const PASS_SCORE = 7 // 70% — actual USCIS passing threshold
-const LEADERBOARD_KEY = 'deported_leaderboard'
+const LEADERBOARD_KEY = 'deported_leaderboard_v2'
 
 const CORRECT_QUIPS = [
   '🦅 Freedom secured!',
