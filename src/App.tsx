@@ -94,6 +94,7 @@ const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 interface LeaderboardEntry {
   name: string
   score: number
+  timeSeconds: number
   passed: boolean
   date: number
 }
@@ -115,6 +116,12 @@ const saveToLeaderboard = (entry: LeaderboardEntry) => {
 const formatDate = (ts: number) => {
   const d = new Date(ts)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const formatTime = (seconds: number) => {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
 // ── Confetti ─────────────────────────────────────────────────────────────────
@@ -247,12 +254,12 @@ const InlineLeaderboard: React.FC = () => {
 
   const stayed = entries
     .filter(e => e.passed)
-    .sort((a, b) => b.score - a.score || a.date - b.date)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
     .slice(0, 10)
 
   const deported = entries
     .filter(e => !e.passed)
-    .sort((a, b) => b.date - a.date)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
 
   if (entries.length === 0) return (
     <div style={{
@@ -297,6 +304,7 @@ const InlineLeaderboard: React.FC = () => {
                 </span>
                 <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem' }}>{e.name}</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{e.score}/10</span>
+                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>⏱ {formatTime(e.timeSeconds)}</span>}
                 <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
               </div>
             ))}
@@ -321,6 +329,7 @@ const InlineLeaderboard: React.FC = () => {
                 <span style={{ fontSize: '0.8rem' }}>🧳</span>
                 <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem' }}>{e.name}</span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>{e.score}/10</span>
+                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 600 }}>⏱ {formatTime(e.timeSeconds)}</span>}
                 <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
               </div>
             ))}
@@ -474,16 +483,25 @@ interface QuizScreenProps {
   selectedAnswer: string | null
   isCorrect: boolean | null
   quip: string
+  startTime: number
   onAnswer: (a: string) => void
   onNext: () => void
 }
 
 const QuizScreen: React.FC<QuizScreenProps> = ({
   question, questionNumber, total, score, wrongCount,
-  selectedAnswer, isCorrect, quip, onAnswer, onNext,
+  selectedAnswer, isCorrect, quip, startTime, onAnswer, onNext,
 }) => {
   const answered = selectedAnswer !== null
   const progressPct = ((questionNumber - 1) / total) * 100
+
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [startTime])
 
   return (
     <div style={page}>
@@ -528,9 +546,19 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
           }}>
             Interrogation {questionNumber} of {total}
           </span>
-          <span style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 700 }}>
-            ✓ {score} correct
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <span style={{
+              fontSize: '0.78rem', fontWeight: 700,
+              color: elapsed >= 120 ? '#f87171' : elapsed >= 60 ? '#fbbf24' : 'var(--accent)',
+              fontVariantNumeric: 'tabular-nums',
+              transition: 'color 0.5s ease',
+            }}>
+              ⏱ {formatTime(elapsed)}
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 700 }}>
+              ✓ {score}
+            </span>
+          </div>
         </div>
 
         <div style={{ height: '4px', background: 'var(--surface)', borderRadius: '99px', overflow: 'hidden', marginBottom: '32px', border: '1px solid var(--border)' }}>
@@ -718,12 +746,12 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
 
   const stayed = entries
     .filter(e => e.passed)
-    .sort((a, b) => b.score - a.score || a.date - b.date)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
     .slice(0, 10)
 
   const deported = entries
     .filter(e => !e.passed)
-    .sort((a, b) => b.date - a.date)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
 
   return (
     <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
@@ -790,6 +818,11 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
                   }}>
                     {e.score}/10
                   </span>
+                  {e.timeSeconds != null && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700, minWidth: '52px', textAlign: 'right' }}>
+                      ⏱ {formatTime(e.timeSeconds)}
+                    </span>
+                  )}
                   <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
                     {formatDate(e.date)}
                   </span>
@@ -835,6 +868,11 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
                   }}>
                     {e.score}/10
                   </span>
+                  {e.timeSeconds != null && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 600, minWidth: '52px', textAlign: 'right' }}>
+                      ⏱ {formatTime(e.timeSeconds)}
+                    </span>
+                  )}
                   <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
                     {formatDate(e.date)}
                   </span>
@@ -871,6 +909,7 @@ interface QuizState {
   selectedAnswer: string | null
   isCorrect: boolean | null
   quip: string
+  startTime: number
 }
 
 type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard'
@@ -896,6 +935,7 @@ export default function App() {
       selectedAnswer: null,
       isCorrect: null,
       quip: '',
+      startTime: Date.now(),
     })
     setScreen('quiz')
   }, [])
@@ -919,9 +959,11 @@ export default function App() {
     if (!quiz) return
     if (quiz.currentIndex + 1 >= QUIZ_LENGTH) {
       const tier = getTier(quiz.score)
+      const timeSeconds = Math.round((Date.now() - quiz.startTime) / 1000)
       saveToLeaderboard({
         name: playerName,
         score: quiz.score,
+        timeSeconds,
         passed: tier.pass,
         date: Date.now(),
       })
@@ -971,6 +1013,7 @@ export default function App() {
       selectedAnswer={quiz.selectedAnswer}
       isCorrect={quiz.isCorrect}
       quip={quiz.quip}
+      startTime={quiz.startTime}
       onAnswer={handleAnswer}
       onNext={handleNext}
     />
