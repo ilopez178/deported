@@ -426,7 +426,7 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '32px',
         }}>
-          Your name will be logged in the federal screening database.<br />
+          Your full name will be logged in the federal screening database.<br />
           <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>(And the leaderboard.)</span>
         </p>
 
@@ -435,8 +435,8 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="First name only, please"
-            maxLength={30}
+            placeholder="First and last name"
+            maxLength={50}
             autoFocus
             style={{
               display: 'block', width: '100%',
