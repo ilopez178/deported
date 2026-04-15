@@ -107,8 +107,12 @@ const loadLeaderboard = (): LeaderboardEntry[] => {
   }
 }
 
-const saveToLeaderboard = (entry: LeaderboardEntry) => {
-  const existing = loadLeaderboard()
+const saveToLeaderboard = (entry: LeaderboardEntry, override = false) => {
+  let existing = loadLeaderboard()
+  if (override) {
+    // Remove all previous entries for this name (they paid to clear their record)
+    existing = existing.filter(e => e.name.toLowerCase() !== entry.name.toLowerCase())
+  }
   existing.push(entry)
   localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(existing))
 }
@@ -899,6 +903,113 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
   )
 }
 
+// ── Paywall Screen ────────────────────────────────────────────────────────────
+
+const PaywallScreen: React.FC<{
+  playerName: string
+  score: number
+  onPay: () => void   // "Pay $1" — for now free, structure ready for real payment
+  onDecline: () => void
+}> = ({ playerName, score, onPay, onDecline }) => {
+  const [clicked, setClicked] = useState(false)
+
+  const handlePay = () => {
+    setClicked(true)
+    // TODO: Replace setTimeout with real payment gate (Stripe, Venmo, etc.)
+    setTimeout(() => onPay(), 1800)
+  }
+
+  return (
+    <div style={page}>
+      <div style={{ ...card, maxWidth: '500px', textAlign: 'center' }} className="slide-in">
+
+        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⛓️</div>
+
+        <div style={{
+          display: 'inline-block',
+          border: '2px solid #ef4444',
+          borderRadius: '6px',
+          padding: '3px 12px',
+          fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em',
+          color: '#ef4444', textTransform: 'uppercase',
+          marginBottom: '20px',
+        }} className="stamp-in">
+          Federal Record Locked
+        </div>
+
+        <h2 style={{
+          fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900,
+          color: 'var(--white)', marginBottom: '10px', lineHeight: 1.15,
+        }}>
+          Your name is on<br />
+          <span style={{ color: '#ef4444' }}>The Shame Wall.</span>
+        </h2>
+
+        <p style={{
+          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65,
+          marginBottom: '8px',
+        }}>
+          <strong style={{ color: 'var(--white)' }}>{playerName}</strong> — you scored{' '}
+          <strong style={{ color: '#ef4444' }}>{score}/10</strong> and got deported.
+          That record is now public, permanent, and very embarrassing.
+        </p>
+
+        <p style={{ color: 'var(--muted)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '28px' }}>
+          The <em>only</em> way to override your entry on the leaderboard
+          is to retake the test. That'll cost you{' '}
+          <strong style={{ color: '#f59e0b' }}>$1</strong>.
+        </p>
+
+        {/* Fake Venmo badge */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          background: '#008CFF15', border: '1px solid #008CFF44',
+          borderRadius: '10px', padding: '10px 18px', marginBottom: '24px',
+          fontSize: '0.8rem', color: '#60afff', fontWeight: 600,
+        }}>
+          <span style={{ fontSize: '1rem' }}>💸</span>
+          Venmo <strong>@ilopez178</strong> — "$1 deportation override"
+        </div>
+
+        {!clicked ? (
+          <>
+            <button onClick={handlePay} className="primary-btn" style={{
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              marginBottom: '10px',
+            }}>
+              💸 I Paid — Let Me Try Again
+            </button>
+            <button onClick={onDecline} style={{
+              display: 'block', width: '100%', padding: '13px',
+              background: 'transparent', border: '1px solid var(--border)',
+              borderRadius: '12px', color: 'var(--muted)', fontSize: '0.875rem',
+              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              ✈️ Accept My Deportation
+            </button>
+          </>
+        ) : (
+          <div className="fade-up" style={{
+            padding: '20px',
+            background: '#0a2515', border: '1px solid #16a34a',
+            borderRadius: '12px',
+            color: '#4ade80', fontSize: '1rem', fontWeight: 700,
+          }}>
+            💸 Payment received. Clearing your record...<br />
+            <span style={{ fontSize: '0.8rem', color: '#86efac', fontWeight: 400 }}>
+              (or at least pretending to)
+            </span>
+          </div>
+        )}
+
+        <p style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.5 }}>
+          No refunds if you get deported again.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── App state ─────────────────────────────────────────────────────────────────
 
 interface QuizState {
@@ -912,21 +1023,21 @@ interface QuizState {
   startTime: number
 }
 
-type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard'
+type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard' | 'paywall'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
   const [playerName, setPlayerName] = useState('')
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
+  const [isPaidOverride, setIsPaidOverride] = useState(false)
 
-  const goToName = useCallback(() => setScreen('name'), [])
   const goToMenu = useCallback(() => setScreen('menu'), [])
   const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
 
-
-  const startQuiz = useCallback((name: string) => {
+  const launchQuiz = useCallback((name: string, override = false) => {
     setPlayerName(name)
+    setIsPaidOverride(override)
     setQuiz({
       questions: shuffleArray(QUESTIONS).slice(0, QUIZ_LENGTH),
       currentIndex: 0,
@@ -939,6 +1050,25 @@ export default function App() {
     })
     setScreen('quiz')
   }, [])
+
+  // Free retry for winners; paywall for the deported
+  const handleRetry = useCallback(() => {
+    const passed = getTier(finalScore).pass
+    if (passed) {
+      setScreen('name')
+    } else {
+      setScreen('paywall')
+    }
+  }, [finalScore])
+
+  // "I paid" — skip name screen, reuse existing name, override their record
+  const handlePaidRetry = useCallback(() => {
+    launchQuiz(playerName, true)
+  }, [playerName, launchQuiz])
+
+  const startQuiz = useCallback((name: string) => {
+    launchQuiz(name, false)
+  }, [launchQuiz])
 
   const handleAnswer = useCallback((answer: string) => {
     setQuiz(prev => {
@@ -966,7 +1096,8 @@ export default function App() {
         timeSeconds,
         passed: tier.pass,
         date: Date.now(),
-      })
+      }, isPaidOverride)
+      setIsPaidOverride(false)
       setFinalScore(quiz.score)
       setScreen('result')
     } else {
@@ -978,22 +1109,26 @@ export default function App() {
         quip: '',
       } : null)
     }
-  }, [quiz, playerName])
+  }, [quiz, playerName, isPaidOverride])
 
-  const restart = useCallback(() => {
-    setScreen('name')
-  }, [])
-
-  if (screen === 'menu') return <MenuScreen onStart={goToName} />
+  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} />
   if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} />
-  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={goToName} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={() => setScreen('name')} />
+  if (screen === 'paywall') return (
+    <PaywallScreen
+      playerName={playerName}
+      score={finalScore}
+      onPay={handlePaidRetry}
+      onDecline={goToMenu}
+    />
+  )
 
   if (screen === 'result') {
     return (
       <ResultScreen
         score={finalScore}
         playerName={playerName}
-        onRestart={restart}
+        onRestart={handleRetry}
         onLeaderboard={goToLeaderboard}
       />
     )
