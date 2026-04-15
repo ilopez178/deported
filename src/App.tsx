@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { QUESTIONS } from '@/data/questions'
 import { shuffleArray } from '@utils/helpers'
 import type { Question } from '@types'
@@ -8,6 +8,7 @@ import type { Question } from '@types'
 
 const QUIZ_LENGTH = 10
 const PASS_SCORE = 7 // 70% — actual USCIS passing threshold
+const LEADERBOARD_KEY = 'deported_leaderboard'
 
 const CORRECT_QUIPS = [
   '🦅 Freedom secured!',
@@ -88,6 +89,34 @@ const getTier = (score: number) =>
 
 const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+
+interface LeaderboardEntry {
+  name: string
+  score: number
+  passed: boolean
+  date: number
+}
+
+const loadLeaderboard = (): LeaderboardEntry[] => {
+  try {
+    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}
+
+const saveToLeaderboard = (entry: LeaderboardEntry) => {
+  const existing = loadLeaderboard()
+  existing.push(entry)
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(existing))
+}
+
+const formatDate = (ts: number) => {
+  const d = new Date(ts)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 // ── Confetti ─────────────────────────────────────────────────────────────────
 
 const CONFETTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#ec4899','#06b6d4','#f97316']
@@ -120,10 +149,8 @@ const Confetti: React.FC = () => {
 // ── Deportation-o-meter ───────────────────────────────────────────────────────
 
 const DeportationMeter: React.FC<{ wrongCount: number }> = ({ wrongCount }) => {
-  // 10 correct = 100%, miss 1 = 90%, miss 2 = 80%, etc.
   const safetyPct = ((QUIZ_LENGTH - wrongCount) / QUIZ_LENGTH) * 100
 
-  // Gradient tiers — vivid, fun colors
   const gradient =
     safetyPct >= 80
       ? 'linear-gradient(90deg, #059669, #10b981, #34d399, #a7f3d0)'
@@ -152,8 +179,8 @@ const DeportationMeter: React.FC<{ wrongCount: number }> = ({ wrongCount }) => {
     <div style={{ marginBottom: '1.5rem' }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between',
-        fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em',
-        textTransform: 'uppercase', color: '#555', marginBottom: '8px',
+        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em',
+        textTransform: 'uppercase', color: 'var(--muted)', marginBottom: '8px',
       }}>
         <span>Residency Status</span>
         <span style={{ color: labelColor, transition: 'color 0.8s ease' }}>{label}</span>
@@ -163,18 +190,15 @@ const DeportationMeter: React.FC<{ wrongCount: number }> = ({ wrongCount }) => {
         overflow: 'hidden', border: '1px solid #252525',
         boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
       }}>
-        {/* Animated bar — width drops 10% per missed question */}
         <div style={{
           height: '100%',
           width: `${safetyPct}%`,
           background: gradient,
           borderRadius: '99px',
-          // Slow, weighted drop — the star of the show
           transition: 'width 1.4s cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: `0 0 18px 2px ${safetyPct >= 70 ? '#10b98166' : safetyPct >= 50 ? '#f59e0b66' : '#ef444466'}`,
           position: 'relative',
         }}>
-          {/* Gloss shine on top of bar */}
           <div style={{
             position: 'absolute', inset: 0,
             background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 55%)',
@@ -183,12 +207,11 @@ const DeportationMeter: React.FC<{ wrongCount: number }> = ({ wrongCount }) => {
         </div>
       </div>
 
-      {/* Tick marks at 70% (pass line) */}
       <div style={{ position: 'relative', height: '10px', marginTop: '4px' }}>
         <div style={{
           position: 'absolute', left: '70%',
           transform: 'translateX(-50%)',
-          fontSize: '0.6rem', color: '#444', fontWeight: 700,
+          fontSize: '0.6rem', color: 'var(--muted)', fontWeight: 700,
           letterSpacing: '0.04em', whiteSpace: 'nowrap',
         }}>
           │ pass line
@@ -205,37 +228,36 @@ const page: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '1.5rem',
-  background: '#0f0f0f',
+  padding: '24px',
+  background: 'var(--bg)',
 }
 
 const card: React.CSSProperties = {
-  background: '#141414',
-  border: '1px solid #242424',
+  background: 'var(--card)',
+  border: '1px solid var(--border)',
   borderRadius: '20px',
-  padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+  padding: 'clamp(24px, 4vw, 48px)',
   width: '100%',
 }
 
 // ── Menu Screen ───────────────────────────────────────────────────────────────
 
-const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+const MenuScreen: React.FC<{ onStart: () => void; onLeaderboard: () => void }> = ({ onStart, onLeaderboard }) => (
   <div style={page}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="slide-in">
 
-      {/* Animated siren */}
-      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }} className="floating">🚨</div>
+      <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
 
       <div style={{
-        fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.15em',
-        color: '#ef4444', marginBottom: '0.75rem', textTransform: 'uppercase',
+        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+        color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
       }} className="siren">
         ⚠ U.S. Citizenship Screening System ⚠
       </div>
 
       <h1 style={{
         fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 900,
-        color: '#f5f5f5', marginBottom: '0.6rem', lineHeight: 1.1,
+        color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
         letterSpacing: '-0.02em',
       }}>
         Should You Get<br />
@@ -243,24 +265,124 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
       </h1>
 
       <p style={{
-        color: '#777', fontSize: '1rem', lineHeight: 1.65,
-        marginBottom: '2rem', maxWidth: '380px', margin: '0 auto 2rem',
+        color: 'var(--text)', fontSize: '1rem', lineHeight: 1.65,
+        maxWidth: '380px', margin: '0 auto 32px',
       }}>
         {QUIZ_LENGTH} random USCIS civics questions. You need {PASS_SCORE} right to stay.
-        How American are <em style={{ color: '#aaa' }}>you</em>, really?
+        How American are <em style={{ color: 'var(--white)' }}>you</em>, really?
       </p>
 
-      <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto 1rem', display: 'block' }}>
+      <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto 12px', display: 'block' }}>
         Begin Screening →
       </button>
 
-      <p style={{ fontSize: '0.72rem', color: '#444', marginTop: '1.25rem', lineHeight: 1.5 }}>
+      <button onClick={onLeaderboard} style={{
+        display: 'block', width: '100%', maxWidth: '320px', margin: '0 auto',
+        padding: '12px 32px', background: 'transparent',
+        color: 'var(--muted)', border: '1px solid var(--border)',
+        borderRadius: '12px', fontSize: '0.875rem', fontWeight: 600,
+        fontFamily: 'inherit', cursor: 'pointer',
+        transition: 'color 0.15s, border-color 0.15s',
+      }}
+        onMouseEnter={e => { (e.target as HTMLButtonElement).style.color = 'var(--white)'; (e.target as HTMLButtonElement).style.borderColor = 'var(--accent)' }}
+        onMouseLeave={e => { (e.target as HTMLButtonElement).style.color = 'var(--muted)'; (e.target as HTMLButtonElement).style.borderColor = 'var(--border)' }}
+      >
+        🏆 Leaderboard
+      </button>
+
+      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '24px', lineHeight: 1.5 }}>
         Based on actual USCIS naturalization test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
     </div>
   </div>
 )
+
+// ── Name Screen ───────────────────────────────────────────────────────────────
+
+const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => void }> = ({ onSubmit, onBack }) => {
+  const [name, setName] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (trimmed) onSubmit(trimmed)
+  }
+
+  return (
+    <div style={page}>
+      <div style={{ ...card, maxWidth: '480px', textAlign: 'center' }} className="slide-in">
+
+        <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>🪪</div>
+
+        <div style={{
+          fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+          color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
+        }} className="siren">
+          Identity Verification Required
+        </div>
+
+        <h2 style={{
+          fontSize: 'clamp(1.4rem, 4vw, 1.9rem)', fontWeight: 900,
+          color: 'var(--white)', marginBottom: '8px', lineHeight: 1.15,
+        }}>
+          State Your Name,<br />
+          <span style={{ color: '#ef4444' }}>Citizen.</span>
+        </h2>
+
+        <p style={{
+          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
+          marginBottom: '32px',
+        }}>
+          Your name will be logged in the federal screening database.<br />
+          <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>(And the leaderboard.)</span>
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="First name only, please"
+            maxLength={30}
+            autoFocus
+            style={{
+              display: 'block', width: '100%',
+              padding: '14px 18px', marginBottom: '12px',
+              background: 'var(--surface)',
+              border: `1px solid ${name.trim() ? 'var(--accent)' : 'var(--border)'}`,
+              borderRadius: '12px',
+              color: 'var(--white)', fontSize: '1.0625rem',
+              fontFamily: 'inherit', fontWeight: 600,
+              outline: 'none',
+              transition: 'border-color 0.15s',
+              textAlign: 'center',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!name.trim()}
+            className="primary-btn safe-btn"
+            style={{ opacity: name.trim() ? 1 : 0.4, transition: 'opacity 0.2s' }}
+          >
+            Submit for Processing →
+          </button>
+        </form>
+
+        <button
+          onClick={onBack}
+          style={{
+            marginTop: '16px', background: 'none', border: 'none',
+            color: 'var(--muted)', fontSize: '0.8rem', cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // ── Quiz Screen ───────────────────────────────────────────────────────────────
 
@@ -288,16 +410,14 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
     <div style={page}>
       <div style={{ ...card, maxWidth: '640px' }}>
 
-        {/* Deportation meter */}
         <DeportationMeter wrongCount={wrongCount} />
 
-        {/* Top bar */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: '0.75rem',
+          marginBottom: '8px',
         }}>
           <span style={{
-            fontSize: '0.7rem', fontWeight: 800, color: '#555',
+            fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted)',
             textTransform: 'uppercase', letterSpacing: '0.12em',
           }}>
             Interrogation {questionNumber} of {total}
@@ -307,32 +427,29 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
           </span>
         </div>
 
-        {/* Progress bar */}
-        <div style={{ height: '4px', background: '#1e1e1e', borderRadius: '99px', overflow: 'hidden', marginBottom: '1.75rem', border: '1px solid #252525' }}>
+        <div style={{ height: '4px', background: 'var(--surface)', borderRadius: '99px', overflow: 'hidden', marginBottom: '32px', border: '1px solid var(--border)' }}>
           <div style={{
             height: '100%', width: `${progressPct}%`,
-            background: 'linear-gradient(90deg, #3b82f6, #6366f1)',
+            background: 'linear-gradient(90deg, var(--accent), var(--accent2))',
             borderRadius: '99px', transition: 'width 0.4s ease',
           }} />
         </div>
 
-        {/* Question card — key forces re-mount → triggers slideIn */}
         <div key={questionNumber} className="slide-in">
           <div style={{
-            fontSize: '0.68rem', fontWeight: 800, color: '#3b82f6',
-            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.6rem',
+            fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent)',
+            textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px',
           }}>
             {question.category}
           </div>
 
           <h2 style={{
             fontSize: 'clamp(1.05rem, 2.5vw, 1.35rem)', fontWeight: 700,
-            color: '#f5f5f5', marginBottom: '1.5rem', lineHeight: 1.45,
+            color: 'var(--white)', marginBottom: '24px', lineHeight: 1.45,
           }}>
             {question.q}
           </h2>
 
-          {/* Answer options */}
           {question.options.map((opt) => {
             const isThisCorrect = opt === question.correct
             const isThisSelected = opt === selectedAnswer
@@ -368,24 +485,23 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
           })}
         </div>
 
-        {/* Feedback + next button */}
         {answered && (
-          <div className="fade-up" style={{ marginTop: '1.25rem' }}>
+          <div className="fade-up" style={{ marginTop: '24px' }}>
             <div style={{
-              padding: '13px 18px',
+              padding: '16px',
               background: isCorrect ? '#0a2515' : '#1f0808',
               border: `1px solid ${isCorrect ? '#16a34a' : '#dc2626'}`,
               borderRadius: '12px',
               color: isCorrect ? '#86efac' : '#fca5a5',
-              fontSize: '0.975rem', fontWeight: 600,
-              textAlign: 'center', marginBottom: '1rem',
+              fontSize: '0.9375rem', fontWeight: 600,
+              textAlign: 'center', marginBottom: '16px',
             }}>
               {quip}
             </div>
 
             <button
               onClick={onNext}
-              className={`primary-btn ${isCorrect ? 'safe-btn' : ''}`}
+              className="primary-btn safe-btn"
             >
               {questionNumber >= total ? 'See Your Verdict  →' : 'Next Question  →'}
             </button>
@@ -398,7 +514,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
 
 // ── Result Screen ─────────────────────────────────────────────────────────────
 
-const ResultScreen: React.FC<{ score: number; onRestart: () => void }> = ({ score, onRestart }) => {
+const ResultScreen: React.FC<{
+  score: number
+  playerName: string
+  onRestart: () => void
+  onLeaderboard: () => void
+}> = ({ score, playerName, onRestart, onLeaderboard }) => {
   const tier = getTier(score)
   const pct = Math.round((score / QUIZ_LENGTH) * 100)
   const wrongCount = QUIZ_LENGTH - score
@@ -409,7 +530,6 @@ const ResultScreen: React.FC<{ score: number; onRestart: () => void }> = ({ scor
       <div style={page}>
         <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="fade-up">
 
-          {/* Stamp badge */}
           <div style={{
             display: 'inline-block',
             border: `3px solid ${tier.color}`,
@@ -422,7 +542,6 @@ const ResultScreen: React.FC<{ score: number; onRestart: () => void }> = ({ scor
             {tier.badge}
           </div>
 
-          {/* Big emoji */}
           <div style={{
             fontSize: '5rem', marginBottom: '1rem',
             animation: tier.pass ? 'float 2.5s ease-in-out infinite' : 'none',
@@ -430,52 +549,238 @@ const ResultScreen: React.FC<{ score: number; onRestart: () => void }> = ({ scor
             {tier.emoji}
           </div>
 
+          {/* Player name */}
+          <div style={{
+            fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px',
+          }}>
+            Verdict for
+          </div>
+          <div style={{
+            fontSize: '1.5rem', fontWeight: 900, color: 'var(--white)',
+            marginBottom: '8px', letterSpacing: '-0.01em',
+          }}>
+            {playerName}
+          </div>
+
           <h1 style={{
-            fontSize: 'clamp(1.4rem, 4vw, 2rem)', fontWeight: 900,
-            color: tier.pass ? '#f5f5f5' : '#ef4444',
-            marginBottom: '0.6rem', lineHeight: 1.15,
+            fontSize: 'clamp(1.2rem, 3.5vw, 1.7rem)', fontWeight: 900,
+            color: tier.pass ? 'var(--white)' : '#ef4444',
+            marginBottom: '8px', lineHeight: 1.15,
           }}>
             {tier.title}
           </h1>
 
-          <p style={{ color: '#777', fontSize: '0.95rem', lineHeight: 1.65, marginBottom: '1.75rem' }}>
+          <p style={{ color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65, marginBottom: '28px' }}>
             {tier.sub}
           </p>
 
-          {/* Score card */}
           <div style={{
-            background: '#1a1a1a', border: '1px solid #252525', borderRadius: '14px',
-            padding: '1.5rem', marginBottom: '1.5rem',
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem',
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px',
+            padding: '24px', marginBottom: '20px',
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px',
           }}>
             <div>
               <div style={{ fontSize: '2.2rem', fontWeight: 900, color: tier.color }}>{score}</div>
-              <div style={{ fontSize: '0.7rem', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Correct</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Correct</div>
             </div>
             <div>
               <div style={{ fontSize: '2.2rem', fontWeight: 900, color: wrongCount > (QUIZ_LENGTH - PASS_SCORE) ? '#ef4444' : '#f59e0b' }}>{wrongCount}</div>
-              <div style={{ fontSize: '0.7rem', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Wrong</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Wrong</div>
             </div>
             <div>
               <div style={{ fontSize: '2.2rem', fontWeight: 900, color: tier.color }}>{pct}%</div>
-              <div style={{ fontSize: '0.7rem', color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Score</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Score</div>
             </div>
           </div>
 
-          {/* Passing line note */}
-          <p style={{ fontSize: '0.72rem', color: '#444', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: '20px' }}>
             USCIS passing score is 7/10 · {tier.pass
               ? score === PASS_SCORE ? 'Minimum pass — cutting it close!'
               : `You beat it by ${score - PASS_SCORE} ${score - PASS_SCORE === 1 ? 'question' : 'questions'}`
               : `You missed by ${PASS_SCORE - score} ${PASS_SCORE - score === 1 ? 'question' : 'questions'}`}
           </p>
 
-          <button onClick={onRestart} className="primary-btn">
+          <button onClick={onLeaderboard} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
+            🏆 View Leaderboard
+          </button>
+          <button onClick={onRestart} className="primary-btn" style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 600 }}>
             Try Again
           </button>
         </div>
       </div>
     </>
+  )
+}
+
+// ── Leaderboard Screen ────────────────────────────────────────────────────────
+
+const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = ({ onBack, onPlay }) => {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+
+  useEffect(() => {
+    setEntries(loadLeaderboard())
+  }, [])
+
+  const stayed = entries
+    .filter(e => e.passed)
+    .sort((a, b) => b.score - a.score || a.date - b.date)
+    .slice(0, 10)
+
+  const deported = entries
+    .filter(e => !e.passed)
+    .sort((a, b) => b.date - a.date)
+
+  const clearBoard = () => {
+    localStorage.removeItem(LEADERBOARD_KEY)
+    setEntries([])
+  }
+
+  return (
+    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
+      <div style={{ ...card, maxWidth: '600px' }} className="slide-in">
+
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🏆</div>
+          <h1 style={{
+            fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 900,
+            color: 'var(--white)', letterSpacing: '-0.02em',
+          }}>
+            Screening Results
+          </h1>
+          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '6px' }}>
+            The official federal record of who stays and who goes
+          </p>
+        </div>
+
+        {/* Stayed section */}
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            marginBottom: '12px',
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>🇺🇸</span>
+            <span style={{
+              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: '#22c55e',
+            }}>
+              Stayed! — Top 10
+            </span>
+          </div>
+
+          {stayed.length === 0 ? (
+            <div style={{
+              padding: '20px', background: 'var(--surface)',
+              border: '1px solid var(--border)', borderRadius: '12px',
+              color: 'var(--muted)', fontSize: '0.875rem', textAlign: 'center',
+            }}>
+              No survivors yet. Be the first to pass!
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {stayed.map((e, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 16px',
+                  background: i === 0 ? '#052e16' : 'var(--surface)',
+                  border: `1px solid ${i === 0 ? '#16a34a' : 'var(--border)'}`,
+                  borderRadius: '10px',
+                }}>
+                  <span style={{
+                    fontSize: '0.75rem', fontWeight: 900, color: i < 3 ? '#f59e0b' : 'var(--muted)',
+                    minWidth: '20px', textAlign: 'center',
+                  }}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                  </span>
+                  <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.9375rem' }}>
+                    {e.name}
+                  </span>
+                  <span style={{
+                    fontSize: '0.8rem', fontWeight: 700,
+                    color: '#22c55e', minWidth: '50px', textAlign: 'right',
+                  }}>
+                    {e.score}/10
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
+                    {formatDate(e.date)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Deported section */}
+        {deported.length > 0 && (
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              marginBottom: '12px',
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>✈️</span>
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: '#ef4444',
+              }}>
+                Deported! — The Shame Wall
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {deported.map((e, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '10px 16px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  opacity: 0.8,
+                }}>
+                  <span style={{ fontSize: '0.85rem' }}>🧳</span>
+                  <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
+                    {e.name}
+                  </span>
+                  <span style={{
+                    fontSize: '0.8rem', fontWeight: 700,
+                    color: '#ef4444', minWidth: '50px', textAlign: 'right',
+                  }}>
+                    {e.score}/10
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
+                    {formatDate(e.date)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button onClick={onPlay} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
+          Take the Test →
+        </button>
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={onBack} style={{
+            flex: 1, padding: '12px', background: 'transparent',
+            border: '1px solid var(--border)', borderRadius: '12px',
+            color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
+            fontFamily: 'inherit', cursor: 'pointer',
+          }}>
+            ← Back
+          </button>
+          {entries.length > 0 && (
+            <button onClick={clearBoard} style={{
+              padding: '12px 16px', background: 'transparent',
+              border: '1px solid #3f0808', borderRadius: '12px',
+              color: '#ef444480', fontSize: '0.8rem', fontWeight: 600,
+              fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -491,11 +796,20 @@ interface QuizState {
   quip: string
 }
 
-export default function App() {
-  const [screen, setScreen] = useState<'menu' | 'quiz' | 'result'>('menu')
-  const [quiz, setQuiz] = useState<QuizState | null>(null)
+type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard'
 
-  const startQuiz = useCallback(() => {
+export default function App() {
+  const [screen, setScreen] = useState<Screen>('menu')
+  const [playerName, setPlayerName] = useState('')
+  const [quiz, setQuiz] = useState<QuizState | null>(null)
+  const [finalScore, setFinalScore] = useState(0)
+
+  const goToName = useCallback(() => setScreen('name'), [])
+  const goToMenu = useCallback(() => setScreen('menu'), [])
+  const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
+
+  const startQuiz = useCallback((name: string) => {
+    setPlayerName(name)
     setQuiz({
       questions: shuffleArray(QUESTIONS).slice(0, QUIZ_LENGTH),
       currentIndex: 0,
@@ -526,6 +840,14 @@ export default function App() {
   const handleNext = useCallback(() => {
     if (!quiz) return
     if (quiz.currentIndex + 1 >= QUIZ_LENGTH) {
+      const tier = getTier(quiz.score)
+      saveToLeaderboard({
+        name: playerName,
+        score: quiz.score,
+        passed: tier.pass,
+        date: Date.now(),
+      })
+      setFinalScore(quiz.score)
       setScreen('result')
     } else {
       setQuiz(prev => prev ? {
@@ -536,10 +858,27 @@ export default function App() {
         quip: '',
       } : null)
     }
-  }, [quiz])
+  }, [quiz, playerName])
 
-  if (screen === 'menu') return <MenuScreen onStart={startQuiz} />
-  if (screen === 'result' && quiz) return <ResultScreen score={quiz.score} onRestart={startQuiz} />
+  const restart = useCallback(() => {
+    setScreen('name')
+  }, [])
+
+  if (screen === 'menu') return <MenuScreen onStart={goToName} onLeaderboard={goToLeaderboard} />
+  if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={goToName} />
+
+  if (screen === 'result') {
+    return (
+      <ResultScreen
+        score={finalScore}
+        playerName={playerName}
+        onRestart={restart}
+        onLeaderboard={goToLeaderboard}
+      />
+    )
+  }
+
   if (!quiz) return null
 
   const q = quiz.questions[quiz.currentIndex]
