@@ -968,7 +968,7 @@ const PaywallScreen: React.FC<{
           fontSize: '0.8rem', color: '#60afff', fontWeight: 600,
         }}>
           <span style={{ fontSize: '1rem' }}>💸</span>
-          Venmo <strong>@ilopez178</strong> — "$1 deportation override"
+          Venmo <strong>@irvinglopez</strong> — "$1 deportation override"
         </div>
 
         {!clicked ? (
