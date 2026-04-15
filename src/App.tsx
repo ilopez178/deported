@@ -240,10 +240,101 @@ const card: React.CSSProperties = {
   width: '100%',
 }
 
+// ── Inline Leaderboard (used on home screen) ──────────────────────────────────
+
+const InlineLeaderboard: React.FC = () => {
+  const entries = loadLeaderboard()
+
+  const stayed = entries
+    .filter(e => e.passed)
+    .sort((a, b) => b.score - a.score || a.date - b.date)
+    .slice(0, 10)
+
+  const deported = entries
+    .filter(e => !e.passed)
+    .sort((a, b) => b.date - a.date)
+
+  if (entries.length === 0) return (
+    <div style={{
+      marginTop: '28px', padding: '20px',
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: '14px', textAlign: 'center',
+    }}>
+      <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>🏆</div>
+      <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
+        No one has been screened yet.<br />Be the first on the board.
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ marginTop: '28px', textAlign: 'left' }}>
+      <div style={{
+        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em',
+        textTransform: 'uppercase', color: 'var(--muted)',
+        textAlign: 'center', marginBottom: '14px',
+      }}>
+        🏆 Federal Screening Record
+      </div>
+
+      {stayed.length > 0 && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{
+            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#22c55e', marginBottom: '6px',
+          }}>🇺🇸 Stayed!</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {stayed.map((e, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 12px',
+                background: i === 0 ? '#052e16' : 'var(--surface)',
+                border: `1px solid ${i === 0 ? '#16a34a33' : 'var(--border)'}`,
+                borderRadius: '8px',
+              }}>
+                <span style={{ fontSize: '0.75rem', minWidth: '18px', color: 'var(--muted)' }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                </span>
+                <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem' }}>{e.name}</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{e.score}/10</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {deported.length > 0 && (
+        <div>
+          <div style={{
+            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#ef4444', marginBottom: '6px',
+          }}>✈️ Deported!</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {deported.map((e, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 12px',
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: '8px', opacity: 0.75,
+              }}>
+                <span style={{ fontSize: '0.8rem' }}>🧳</span>
+                <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem' }}>{e.name}</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>{e.score}/10</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Menu Screen ───────────────────────────────────────────────────────────────
 
-const MenuScreen: React.FC<{ onStart: () => void; onLeaderboard: () => void }> = ({ onStart, onLeaderboard }) => (
-  <div style={page}>
+const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+  <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="slide-in">
 
       <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
@@ -266,34 +357,22 @@ const MenuScreen: React.FC<{ onStart: () => void; onLeaderboard: () => void }> =
 
       <p style={{
         color: 'var(--text)', fontSize: '1rem', lineHeight: 1.65,
-        maxWidth: '380px', margin: '0 auto 32px',
+        maxWidth: '380px', margin: '0 auto 28px',
       }}>
         {QUIZ_LENGTH} random USCIS civics questions. You need {PASS_SCORE} right to stay.
         How American are <em style={{ color: 'var(--white)' }}>you</em>, really?
       </p>
 
-      <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto 12px', display: 'block' }}>
+      <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
         Begin Screening →
       </button>
 
-      <button onClick={onLeaderboard} style={{
-        display: 'block', width: '100%', maxWidth: '320px', margin: '0 auto',
-        padding: '12px 32px', background: 'transparent',
-        color: 'var(--muted)', border: '1px solid var(--border)',
-        borderRadius: '12px', fontSize: '0.875rem', fontWeight: 600,
-        fontFamily: 'inherit', cursor: 'pointer',
-        transition: 'color 0.15s, border-color 0.15s',
-      }}
-        onMouseEnter={e => { (e.target as HTMLButtonElement).style.color = 'var(--white)'; (e.target as HTMLButtonElement).style.borderColor = 'var(--accent)' }}
-        onMouseLeave={e => { (e.target as HTMLButtonElement).style.color = 'var(--muted)'; (e.target as HTMLButtonElement).style.borderColor = 'var(--border)' }}
-      >
-        🏆 Leaderboard
-      </button>
-
-      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '24px', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.5 }}>
         Based on actual USCIS naturalization test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
+
+      <InlineLeaderboard />
     </div>
   </div>
 )
@@ -410,6 +489,33 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
     <div style={page}>
       <div style={{ ...card, maxWidth: '640px' }}>
 
+        {/* Quip banner — top of card, only shows after answering */}
+        {answered && (
+          <div className="pop-in" style={{
+            marginBottom: '20px',
+            padding: '18px 20px',
+            background: isCorrect
+              ? 'linear-gradient(135deg, #052e16 0%, #0a3d1f 100%)'
+              : 'linear-gradient(135deg, #1f0808 0%, #3a0d0d 100%)',
+            border: `2px solid ${isCorrect ? '#16a34a' : '#dc2626'}`,
+            borderRadius: '14px',
+            textAlign: 'center',
+            boxShadow: isCorrect
+              ? '0 0 28px rgba(22, 163, 74, 0.25)'
+              : '0 0 28px rgba(220, 38, 38, 0.25)',
+          }}>
+            <div style={{
+              fontSize: 'clamp(1.3rem, 3.5vw, 1.75rem)',
+              fontWeight: 900,
+              color: isCorrect ? '#4ade80' : '#f87171',
+              lineHeight: 1.25,
+              letterSpacing: '-0.01em',
+            }}>
+              {quip}
+            </div>
+          </div>
+        )}
+
         <DeportationMeter wrongCount={wrongCount} />
 
         <div style={{
@@ -486,19 +592,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
         </div>
 
         {answered && (
-          <div className="fade-up" style={{ marginTop: '24px' }}>
-            <div style={{
-              padding: '16px',
-              background: isCorrect ? '#0a2515' : '#1f0808',
-              border: `1px solid ${isCorrect ? '#16a34a' : '#dc2626'}`,
-              borderRadius: '12px',
-              color: isCorrect ? '#86efac' : '#fca5a5',
-              fontSize: '0.9375rem', fontWeight: 600,
-              textAlign: 'center', marginBottom: '16px',
-            }}>
-              {quip}
-            </div>
-
+          <div className="fade-up" style={{ marginTop: '20px' }}>
             <button
               onClick={onNext}
               className="primary-btn safe-btn"
@@ -631,11 +725,6 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
     .filter(e => !e.passed)
     .sort((a, b) => b.date - a.date)
 
-  const clearBoard = () => {
-    localStorage.removeItem(LEADERBOARD_KEY)
-    setEntries([])
-  }
-
   return (
     <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
       <div style={{ ...card, maxWidth: '600px' }} className="slide-in">
@@ -759,26 +848,14 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
           Take the Test →
         </button>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onBack} style={{
-            flex: 1, padding: '12px', background: 'transparent',
-            border: '1px solid var(--border)', borderRadius: '12px',
-            color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
-            fontFamily: 'inherit', cursor: 'pointer',
-          }}>
-            ← Back
-          </button>
-          {entries.length > 0 && (
-            <button onClick={clearBoard} style={{
-              padding: '12px 16px', background: 'transparent',
-              border: '1px solid #3f0808', borderRadius: '12px',
-              color: '#ef444480', fontSize: '0.8rem', fontWeight: 600,
-              fontFamily: 'inherit', cursor: 'pointer',
-            }}>
-              Clear
-            </button>
-          )}
-        </div>
+        <button onClick={onBack} style={{
+          width: '100%', padding: '12px', background: 'transparent',
+          border: '1px solid var(--border)', borderRadius: '12px',
+          color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
+          fontFamily: 'inherit', cursor: 'pointer',
+        }}>
+          ← Back to Home
+        </button>
       </div>
     </div>
   )
@@ -807,6 +884,7 @@ export default function App() {
   const goToName = useCallback(() => setScreen('name'), [])
   const goToMenu = useCallback(() => setScreen('menu'), [])
   const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
+
 
   const startQuiz = useCallback((name: string) => {
     setPlayerName(name)
@@ -864,7 +942,7 @@ export default function App() {
     setScreen('name')
   }, [])
 
-  if (screen === 'menu') return <MenuScreen onStart={goToName} onLeaderboard={goToLeaderboard} />
+  if (screen === 'menu') return <MenuScreen onStart={goToName} />
   if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} />
   if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={goToName} />
 
