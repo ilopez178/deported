@@ -803,7 +803,7 @@ const ResultScreen: React.FC<{
           )}
 
           {/* CTAs */}
-          <button onClick={onRestart} className="primary-btn" style={{
+          <button onClick={onRestart} className={`primary-btn${tier.pass ? ' safe-btn' : ''}`} style={{
             background: tier.pass ? undefined : '#ef4444',
             marginBottom: '10px',
           }}>
@@ -813,8 +813,8 @@ const ResultScreen: React.FC<{
           {tier.pass && (
             <button onClick={onLeaderboard} style={{
               display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid var(--border)',
-              borderRadius: '12px', color: 'var(--muted)', fontSize: '0.875rem',
+              background: 'transparent', border: '1px solid #16a34a55',
+              borderRadius: '12px', color: '#16a34a', fontSize: '0.875rem',
               fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
             }}>
               🏆 View Full Leaderboard
