@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#111"/>
+    </linearGradient>
+    <linearGradient id="stripe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Top red stripe -->
+  <rect width="1200" height="6" fill="url(#stripe)"/>
+
+  <!-- Bottom red stripe -->
+  <rect y="624" width="1200" height="6" fill="url(#stripe)"/>
+
+  <!-- Left accent bar -->
+  <rect x="60" y="80" width="5" height="420" rx="3" fill="#ef4444" opacity="0.7"/>
+
+  <!-- Siren emoji -->
+  <text x="120" y="220" font-size="110" font-family="system-ui, sans-serif">🚨</text>
+
+  <!-- Main title line 1 -->
+  <text x="280" y="210"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="88" font-weight="900" fill="#f2f2f2"
+    letter-spacing="-3">
+    Should You Get
+  </text>
+
+  <!-- Main title line 2 — red -->
+  <text x="280" y="310"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="88" font-weight="900" fill="#ef4444"
+    letter-spacing="-3">
+    Deported?
+  </text>
+
+  <!-- Divider line -->
+  <rect x="280" y="340" width="700" height="2" fill="#1c1c1c"/>
+
+  <!-- Subtitle -->
+  <text x="280" y="400"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="34" font-weight="500" fill="#c8c8c8">
+    How American are you, really?
+  </text>
+  <text x="280" y="445"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="34" font-weight="500" fill="#c8c8c8">
+    Take the official USCIS citizenship test.
+  </text>
+
+  <!-- Badge pill -->
+  <rect x="280" y="495" width="380" height="52" rx="26" fill="#ef444422" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="470" y="528"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="22" font-weight="700" fill="#ef4444" text-anchor="middle"
+    letter-spacing="1">
+    ⚠ U.S. CITIZENSHIP SCREENING
+  </text>
+
+  <!-- URL bottom right -->
+  <text x="1130" y="590"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="22" font-weight="600" fill="#5a5a5a" text-anchor="end">
+    irvinglopez.com/deported
+  </text>
+</svg>
