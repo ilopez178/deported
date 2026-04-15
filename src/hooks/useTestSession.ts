@@ -1,7 +1,7 @@
 // src/hooks/useTestSession.ts
 
 import { useState, useCallback, useEffect } from 'react'
-import { Question, TestSession, StoredData } from '@types'
+import { Question, TestSession } from '@types'
 
 const STORAGE_KEY = 'citizenship_test_session'
 
@@ -10,11 +10,8 @@ export const useTestSession = () => {
 
   // Load from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const _data: StoredData = JSON.parse(stored)
-      // Note: We'll initialize session when needed
-    }
+    localStorage.getItem(STORAGE_KEY)
+    // Session is initialized on demand via initializeSession
   }, [])
 
   const initializeSession = useCallback((questions: Question[], isTestMode: boolean) => {
