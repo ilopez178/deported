@@ -1115,6 +1115,8 @@ export default function App() {
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
   const [isPaidOverride, setIsPaidOverride] = useState(false)
+  // Once deported this session, "Begin Screening" gates to paywall until they pay
+  const [sessionDeported, setSessionDeported] = useState(false)
 
   const goToMenu = useCallback(() => setScreen('menu'), [])
   const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
@@ -1147,6 +1149,7 @@ export default function App() {
 
   // "I paid" — skip name screen, reuse existing name, override their record
   const handlePaidRetry = useCallback(() => {
+    setSessionDeported(false) // paid their debt, gate lifts for this run
     launchQuiz(playerName, true)
   }, [playerName, launchQuiz])
 
@@ -1182,6 +1185,7 @@ export default function App() {
         date: Date.now(),
       }, isPaidOverride)
       setIsPaidOverride(false)
+      if (!tier.pass) setSessionDeported(true)
       setFinalScore(quiz.score)
       setScreen('result')
     } else {
@@ -1195,9 +1199,9 @@ export default function App() {
     }
   }, [quiz, playerName, isPaidOverride])
 
-  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} />
+  if (screen === 'menu') return <MenuScreen onStart={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
   if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} />
-  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={() => setScreen('name')} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
   if (screen === 'paywall') return (
     <PaywallScreen
       playerName={playerName}
