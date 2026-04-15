@@ -52,14 +52,12 @@ export const useTestSession = () => {
 
   const saveProgress = useCallback((finalScore?: number) => {
     if (!session) return
-
-    const data: StoredData = {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
       mastered: Array.from(session.mastered),
       streak: session.streak,
       bestScore: finalScore ?? session.score,
       lastUpdated: Date.now()
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    }))
   }, [session])
 
   return {
