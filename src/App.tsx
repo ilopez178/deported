@@ -650,10 +650,24 @@ const ResultScreen: React.FC<{
   const pct = Math.round((score / QUIZ_LENGTH) * 100)
   const wrongCount = QUIZ_LENGTH - score
 
+  // For failed players: find their position in the deported list
+  const allEntries = loadLeaderboard()
+  const deportedList = allEntries
+    .filter(e => !e.passed)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
+  const stayedList = allEntries
+    .filter(e => e.passed)
+    .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
+    .slice(0, 10)
+
+  // Find this player's most recent entry in the relevant list
+  const myDeportedIdx = (() => { let r = -1; deportedList.forEach((e, i) => { if (e.name.toLowerCase() === playerName.toLowerCase()) r = i }); return r })()
+  const myStayedIdx  = (() => { let r = -1; stayedList.forEach((e, i) => { if (e.name.toLowerCase() === playerName.toLowerCase()) r = i }); return r })()
+
   return (
     <>
       {tier.pass && <Confetti />}
-      <div style={page}>
+      <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
         <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="fade-up">
 
           <div style={{
@@ -675,7 +689,6 @@ const ResultScreen: React.FC<{
             {tier.emoji}
           </div>
 
-          {/* Player name */}
           <div style={{
             fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 700,
             textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '6px',
@@ -697,13 +710,14 @@ const ResultScreen: React.FC<{
             {tier.title}
           </h1>
 
-          <p style={{ color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65, marginBottom: '28px' }}>
+          <p style={{ color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65, marginBottom: '24px' }}>
             {tier.sub}
           </p>
 
+          {/* Score card */}
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px',
-            padding: '24px', marginBottom: '20px',
+            padding: '24px', marginBottom: '16px',
             display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px',
           }}>
             <div>
@@ -727,12 +741,85 @@ const ResultScreen: React.FC<{
               : `You missed by ${PASS_SCORE - score} ${PASS_SCORE - score === 1 ? 'question' : 'questions'}`}
           </p>
 
-          <button onClick={onLeaderboard} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
-            🏆 View Leaderboard
+          {/* Inline leaderboard position */}
+          {tier.pass && stayedList.length > 0 && (
+            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px' }}>
+                🇺🇸 Your Rank — Stayed!
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {stayedList.map((e, i) => {
+                  const isMe = i === myStayedIdx
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '9px 13px',
+                      background: isMe ? '#052e16' : 'var(--surface)',
+                      border: `1px solid ${isMe ? '#16a34a' : 'var(--border)'}`,
+                      borderRadius: '8px',
+                      transform: isMe ? 'scale(1.02)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}>
+                      <span style={{ fontSize: '0.75rem', minWidth: '18px', color: isMe ? '#f59e0b' : 'var(--muted)' }}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      </span>
+                      <span style={{ flex: 1, fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--white)' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{e.score}/10</span>
+                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)' }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {!tier.pass && deportedList.length > 0 && (
+            <div style={{ marginBottom: '20px', textAlign: 'left' }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px' }}>
+                ✈️ Your Spot — The Shame Wall
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {deportedList.map((e, i) => {
+                  const isMe = i === myDeportedIdx
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '9px 13px',
+                      background: isMe ? '#1f0808' : 'var(--surface)',
+                      border: `1px solid ${isMe ? '#dc2626' : 'var(--border)'}`,
+                      borderRadius: '8px',
+                      transform: isMe ? 'scale(1.02)' : 'none',
+                      opacity: isMe ? 1 : 0.65,
+                    }}>
+                      <span style={{ fontSize: '0.8rem' }}>🧳</span>
+                      <span style={{ flex: 1, fontWeight: isMe ? 800 : 600, color: isMe ? '#fca5a5' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>{e.score}/10</span>
+                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* CTAs */}
+          <button onClick={onRestart} className="primary-btn" style={{
+            background: tier.pass ? undefined : '#ef4444',
+            marginBottom: '10px',
+          }}>
+            Try Again {tier.pass ? '' : '→'}
           </button>
-          <button onClick={onRestart} className="primary-btn" style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 600 }}>
-            Try Again
-          </button>
+
+          {tier.pass && (
+            <button onClick={onLeaderboard} style={{
+              display: 'block', width: '100%', padding: '13px',
+              background: 'transparent', border: '1px solid var(--border)',
+              borderRadius: '12px', color: 'var(--muted)', fontSize: '0.875rem',
+              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              🏆 View Full Leaderboard
+            </button>
+          )}
         </div>
       </div>
     </>
@@ -973,16 +1060,13 @@ const PaywallScreen: React.FC<{
 
         {!clicked ? (
           <>
-            <button onClick={handlePay} className="primary-btn" style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              marginBottom: '10px',
-            }}>
+            <button onClick={handlePay} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
               💸 I Paid — Let Me Try Again
             </button>
             <button onClick={onDecline} style={{
               display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid var(--border)',
-              borderRadius: '12px', color: 'var(--muted)', fontSize: '0.875rem',
+              background: 'transparent', border: '1px solid #16a34a55',
+              borderRadius: '12px', color: '#16a34a', fontSize: '0.875rem',
               fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
             }}>
               ✈️ Accept My Deportation
