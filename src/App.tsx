@@ -1154,7 +1154,7 @@ const PaywallScreen: React.FC<{
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '28px',
         }}>
-          Pay <strong style={{ color: '#16a34a' }}>$1</strong> on Venmo to erase it and try again.{' '}
+          Pay <strong style={{ color: '#22c55e' }}>$1</strong> on Venmo to erase it and try again.{' '}
           <span style={{ color: 'var(--muted)' }}>No promises you'll do better.</span>
         </p>
 
@@ -1171,7 +1171,7 @@ const PaywallScreen: React.FC<{
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
-                  background: 'var(--surface)', border: '1px solid var(--accent)',
+                  background: 'var(--surface)', border: '1px solid #16a34a',
                   borderRadius: '12px', padding: '16px',
                   textDecoration: 'none', cursor: 'pointer',
                 }}
@@ -1182,8 +1182,8 @@ const PaywallScreen: React.FC<{
                   <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '2px' }}>Venmo</div>
                 </div>
                 <span style={{
-                  fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)',
-                  flexShrink: 0, background: '#0ea5e915',
+                  fontSize: '0.8rem', fontWeight: 700, color: '#16a34a',
+                  flexShrink: 0, background: '#16a34a15',
                   borderRadius: '8px', padding: '6px 12px',
                 }}>
                   Open →
@@ -1203,8 +1203,8 @@ const PaywallScreen: React.FC<{
 
             <button onClick={onDecline} style={{
               display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid #16a34a55',
-              borderRadius: '12px', color: '#16a34a', fontSize: '0.875rem',
+              background: 'transparent', border: '1px solid #ef444455',
+              borderRadius: '12px', color: '#ef4444', fontSize: '0.875rem',
               fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
             }}>
               ✈️ Accept My Deportation
