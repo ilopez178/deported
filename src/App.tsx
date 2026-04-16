@@ -927,7 +927,7 @@ const ResultScreen: React.FC<{
             Try Again {tier.pass ? '' : '→'}
           </button>
 
-          {tier.pass && (
+          {tier.pass ? (
             <button onClick={onLeaderboard} style={{
               display: 'block', width: '100%', padding: '13px',
               background: 'transparent', border: '1px solid #16a34a55',
@@ -935,6 +935,15 @@ const ResultScreen: React.FC<{
               fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
             }}>
               🏆 View Full Leaderboard
+            </button>
+          ) : (
+            <button onClick={onLeaderboard} style={{
+              display: 'block', width: '100%', padding: '13px',
+              background: 'transparent', border: '1px solid #ef444455',
+              borderRadius: '12px', color: '#ef4444', fontSize: '0.875rem',
+              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              ✈️ Accept My Deportation — View Leaderboard
             </button>
           )}
         </div>
