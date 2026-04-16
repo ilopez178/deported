@@ -372,7 +372,8 @@ const InlineLeaderboard: React.FC = () => {
           <div style={{
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px',
-          }}>🇺🇸 Stayed!</div>
+            display: 'flex', alignItems: 'center', gap: '6px',
+          }}>🇺🇸 Stayed! <span style={{ color: 'var(--muted)' }}>({stayed.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {stayed.map((e, i) => (
               <div key={i} style={{
@@ -400,7 +401,8 @@ const InlineLeaderboard: React.FC = () => {
           <div style={{
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px',
-          }}>✈️ Deported!</div>
+            display: 'flex', alignItems: 'center', gap: '6px',
+          }}>✈️ Deported! <span style={{ color: 'var(--muted)' }}>({deported.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {deported.map((e, i) => (
               <div key={i} style={{
@@ -557,18 +559,7 @@ const ShareButton: React.FC = () => {
   )
 }
 
-const usePlayCount = () => {
-  const [count, setCount] = useState<number | null>(null)
-  useEffect(() => {
-    supabase.from('plays').select('*', { count: 'exact', head: true })
-      .then(({ count: c }) => { if (c != null) setCount(c) })
-  }, [])
-  return count
-}
-
-const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
-  const playCount = usePlayCount()
-  return (
+const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
   <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
@@ -613,20 +604,13 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
 
       <InlineLeaderboard />
 
-      {playCount != null && playCount > 0 && (
-        <p style={{ fontSize: '0.78rem', color: 'var(--text)', marginTop: '20px', fontWeight: 600 }}>
-          <span style={{ color: 'var(--white)' }}>{playCount.toLocaleString()}</span> people have been screened
-        </p>
-      )}
-
-      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '6px', lineHeight: 1.6 }}>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '20px', lineHeight: 1.6 }}>
         Based on actual citizenship test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
     </div>
   </div>
-  )
-}
+)
 
 // ── Name Screen ───────────────────────────────────────────────────────────────
 
