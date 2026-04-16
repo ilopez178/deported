@@ -164,7 +164,7 @@ const formatTime = (seconds: number) => {
 
 // ── Confetti ─────────────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#ec4899','#06b6d4','#f97316']
+const CONFETTI_COLORS = ['#ef4444','#0ea5e9','#22c55e','#f59e0b','#a855f7','#ec4899','#06b6d4','#f97316']
 
 const Confetti: React.FC = () => {
   const pieces = useMemo(() => Array.from({ length: 60 }, (_, i) => ({
@@ -1175,7 +1175,7 @@ const PaywallScreen: React.FC<{
             <div style={{ textAlign: 'left', marginBottom: '8px' }}>
               <div style={{
                 fontSize: '0.85rem', fontWeight: 700,
-                color: '#3b82f6', marginBottom: '8px',
+                color: 'var(--accent)', marginBottom: '8px',
               }}>
                 Step 1 — Send <strong>${'1'}</strong> on Venmo
               </div>
@@ -1185,7 +1185,7 @@ const PaywallScreen: React.FC<{
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
-                  background: 'var(--surface)', border: '1px solid #3b82f6',
+                  background: 'var(--surface)', border: '1px solid var(--accent)',
                   borderRadius: '12px', padding: '14px 16px',
                   textDecoration: 'none', cursor: 'pointer',
                 }}
@@ -1200,8 +1200,8 @@ const PaywallScreen: React.FC<{
                   </div>
                 </div>
                 <span style={{
-                  fontSize: '0.75rem', fontWeight: 700, color: '#3b82f6',
-                  flexShrink: 0, border: '1px solid #3b82f633',
+                  fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)',
+                  flexShrink: 0, border: '1px solid #0ea5e933',
                   borderRadius: '6px', padding: '4px 8px',
                 }}>
                   Open →
@@ -1213,7 +1213,7 @@ const PaywallScreen: React.FC<{
             <div style={{ textAlign: 'left', marginBottom: '20px', marginTop: '20px' }}>
               <div style={{
                 fontSize: '0.85rem', fontWeight: 700,
-                color: '#3b82f6', marginBottom: '8px',
+                color: 'var(--accent)', marginBottom: '8px',
               }}>
                 Step 2 — Come back and tap below
               </div>
