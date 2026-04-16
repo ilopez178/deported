@@ -130,15 +130,22 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
 
 const saveToLeaderboard = async (entry: LeaderboardEntry): Promise<void> => {
   try {
-    // Always replace — each player has exactly one entry (their most recent result)
-    await supabase.from('leaderboard').delete().ilike('name', entry.name)
-    await supabase.from('leaderboard').insert({
+    // Always replace — each player has exactly one entry (their most recent result).
+    // Requires DELETE policy on the leaderboard table for the anon role.
+    const { error: deleteError } = await supabase
+      .from('leaderboard')
+      .delete()
+      .ilike('name', entry.name)
+    if (deleteError) console.error('Leaderboard delete failed (check RLS policy):', deleteError)
+
+    const { error: insertError } = await supabase.from('leaderboard').insert({
       name: entry.name,
       score: entry.score,
       time_seconds: entry.timeSeconds ?? null,
       passed: entry.passed,
       date: entry.date,
     })
+    if (insertError) console.error('Leaderboard insert failed:', insertError)
   } catch (e) {
     console.error('Failed to save to leaderboard:', e)
   }
