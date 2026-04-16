@@ -128,14 +128,10 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   }
 }
 
-const saveToLeaderboard = async (entry: LeaderboardEntry, override = false): Promise<void> => {
+const saveToLeaderboard = async (entry: LeaderboardEntry): Promise<void> => {
   try {
-    if (override) {
-      await supabase
-        .from('leaderboard')
-        .delete()
-        .ilike('name', entry.name)
-    }
+    // Always replace — each player has exactly one entry (their most recent result)
+    await supabase.from('leaderboard').delete().ilike('name', entry.name)
     await supabase.from('leaderboard').insert({
       name: entry.name,
       score: entry.score,
@@ -1259,7 +1255,6 @@ export default function App() {
   const [playerName, setPlayerName] = useState('')
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
-  const [isPaidOverride, setIsPaidOverride] = useState(false)
   const [wasDeportedRetry, setWasDeportedRetry] = useState(false)
   // Persisted across sessions via localStorage
   const [sessionDeported, setSessionDeported] = useState(() => loadPlayer()?.deported ?? false)
@@ -1276,9 +1271,8 @@ export default function App() {
   const goToMenu = useCallback(() => setScreen('menu'), [])
   const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
 
-  const launchQuiz = useCallback((name: string, override = false) => {
+  const launchQuiz = useCallback((name: string) => {
     setPlayerName(name)
-    setIsPaidOverride(override)
     setQuiz({
       questions: shuffleArray(QUESTIONS).slice(0, QUIZ_LENGTH).map(q => ({
         ...q,
@@ -1300,12 +1294,12 @@ export default function App() {
     setSessionDeported(false)
     setWasDeportedRetry(true)
     savePlayer(playerName, false)
-    launchQuiz(playerName, true)
+    launchQuiz(playerName)
   }, [playerName, launchQuiz])
 
   const startQuiz = useCallback((name: string) => {
     setWasDeportedRetry(false)
-    launchQuiz(name, false)
+    launchQuiz(name)
   }, [launchQuiz])
 
   const handleRetry = useCallback(() => {
@@ -1344,8 +1338,7 @@ export default function App() {
         timeSeconds,
         passed: tier.pass,
         date: Date.now(),
-      }, isPaidOverride)
-      setIsPaidOverride(false)
+      })
       setSessionDeported(!tier.pass)
       savePlayer(playerName, !tier.pass)
       setFinalScore(quiz.score)
@@ -1359,7 +1352,7 @@ export default function App() {
         quip: '',
       } : null)
     }
-  }, [quiz, playerName, isPaidOverride])
+  }, [quiz, playerName])
 
   if (screen === 'menu') return <MenuScreen onStart={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
   if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} defaultName={playerName} />
