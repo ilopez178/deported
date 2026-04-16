@@ -943,7 +943,7 @@ const ResultScreen: React.FC<{
               borderRadius: '12px', color: '#ef4444', fontSize: '0.875rem',
               fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
             }}>
-              ✈️ Accept My Deportation — View Leaderboard
+              ✈️ Accept My Deportation
             </button>
           )}
         </div>
