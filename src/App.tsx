@@ -437,17 +437,28 @@ const ShareButton: React.FC = () => {
   return (
     <button
       onClick={handleShare}
+      title="Send to a Friend"
       style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-        width: '100%', maxWidth: '320px', margin: '10px auto 0',
-        padding: '13px', background: 'transparent',
-        border: '1px solid var(--border)', borderRadius: '12px',
-        color: copied ? '#4ade80' : 'var(--text)', fontSize: '0.875rem',
-        fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-        transition: 'border-color 0.2s, color 0.2s',
+        position: 'absolute', top: '16px', right: '16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '36px', height: '36px',
+        background: copied ? '#16a34a' : '#ef4444',
+        border: 'none', borderRadius: '10px',
+        cursor: 'pointer', transition: 'background 0.2s, transform 0.1s',
+        flexShrink: 0,
       }}
     >
-      {copied ? '✓ Link Copied!' : '📲 Send to a Friend'}
+      {copied ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+          <polyline points="16 6 12 2 8 6" />
+          <line x1="12" y1="2" x2="12" y2="15" />
+        </svg>
+      )}
     </button>
   )
 }
@@ -465,7 +476,10 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
   const playCount = usePlayCount()
   return (
   <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
-    <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="slide-in">
+    <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
+
+      {/* Share icon — top right of card */}
+      <ShareButton />
 
       <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
 
@@ -489,7 +503,7 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
         maxWidth: '380px', margin: '0 auto 4px',
       }}>
-        {QUIZ_LENGTH} random citizenship test questions.{' '}
+        {QUIZ_LENGTH} random U.S. citizenship test questions.{' '}
         You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
       </p>
       <p style={{
@@ -502,8 +516,6 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
       <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
         Begin Screening →
       </button>
-
-      <ShareButton />
 
       {playCount != null && playCount > 0 && (
         <p style={{ fontSize: '0.78rem', color: 'var(--text)', marginTop: '14px', fontWeight: 600 }}>
