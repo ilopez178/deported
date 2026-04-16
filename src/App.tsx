@@ -128,9 +128,9 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   }
 }
 
-const logPlay = async (score: number, passed: boolean): Promise<void> => {
+const logPlay = async (name: string, score: number, passed: boolean): Promise<void> => {
   try {
-    await supabase.from('plays').insert({ score, passed })
+    await supabase.from('plays').insert({ name, score, passed })
   } catch (e) {
     console.error('Failed to log play:', e)
   }
@@ -1545,7 +1545,7 @@ export default function App() {
         passed: tier.pass,
         date: Date.now(),
       }),
-      logPlay(quiz.score, tier.pass),
+      logPlay(playerName, quiz.score, tier.pass),
     ])
     setSessionDeported(!tier.pass)
     savePlayer(playerName, !tier.pass)
@@ -1566,7 +1566,7 @@ export default function App() {
           passed: tier.pass,
           date: Date.now(),
         }),
-        logPlay(quiz.score, tier.pass),
+        logPlay(playerName, quiz.score, tier.pass),
       ])
       setSessionDeported(!tier.pass)
       savePlayer(playerName, !tier.pass)
