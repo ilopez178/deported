@@ -1176,7 +1176,10 @@ export default function App() {
     setPlayerName(name)
     setIsPaidOverride(override)
     setQuiz({
-      questions: shuffleArray(QUESTIONS).slice(0, QUIZ_LENGTH),
+      questions: shuffleArray(QUESTIONS).slice(0, QUIZ_LENGTH).map(q => ({
+        ...q,
+        options: shuffleArray([...q.options]),
+      })),
       currentIndex: 0,
       score: 0,
       wrongCount: 0,
