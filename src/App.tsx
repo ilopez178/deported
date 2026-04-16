@@ -419,47 +419,130 @@ const InlineLeaderboard: React.FC = () => {
 const SHARE_URL = 'https://irvinglopez.com/deported/'
 const SHARE_TEXT = 'Can you pass the U.S. citizenship test? 🚨 Find out if you get deported →'
 
-const ShareButton: React.FC = () => {
+const ShareModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [copied, setCopied] = useState(false)
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Should You Get Deported?', text: SHARE_TEXT, url: SHARE_URL })
-      } catch { /* user cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(`${SHARE_TEXT} ${SHARE_URL}`)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    }
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(SHARE_URL)
+    setCopied(true)
+    setTimeout(() => { setCopied(false); onClose() }, 1800)
   }
 
+  const smsBody = encodeURIComponent(`${SHARE_TEXT} ${SHARE_URL}`)
+  const smsHref = `sms:?body=${smsBody}`
+
   return (
-    <button
-      onClick={handleShare}
-      title="Send to a Friend"
+    <div
+      onClick={onClose}
       style={{
-        position: 'absolute', top: '16px', right: '16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        width: '36px', height: '36px',
-        background: copied ? '#16a34a' : '#ef4444',
-        border: 'none', borderRadius: '10px',
-        cursor: 'pointer', transition: 'background 0.2s, transform 0.1s',
-        flexShrink: 0,
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.7)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        padding: '0 16px 32px',
+        backdropFilter: 'blur(4px)',
       }}
     >
-      {copied ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
+      <div
+        onClick={e => e.stopPropagation()}
+        className="slide-in"
+        style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: '20px', padding: '24px',
+          width: '100%', maxWidth: '420px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>📲</div>
+        <div style={{ fontWeight: 800, color: 'var(--white)', fontSize: '1.1rem', marginBottom: '4px' }}>
+          Send to a Friend
+        </div>
+        <div style={{ color: 'var(--text)', fontSize: '0.825rem', marginBottom: '20px' }}>
+          Dare them to take the citizenship test.
+        </div>
+
+        {/* Copy link */}
+        <button
+          onClick={handleCopy}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            width: '100%', padding: '14px',
+            background: copied ? '#052e16' : 'var(--surface)',
+            border: `1px solid ${copied ? '#16a34a' : 'var(--border)'}`,
+            borderRadius: '12px', marginBottom: '10px',
+            color: copied ? '#4ade80' : 'var(--white)',
+            fontSize: '0.9375rem', fontWeight: 700,
+            fontFamily: 'inherit', cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          {copied ? (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              Copied!
+            </>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Link
+            </>
+          )}
+        </button>
+
+        {/* Text a friend */}
+        <a
+          href={smsHref}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            width: '100%', padding: '14px',
+            background: '#ef4444', borderRadius: '12px', marginBottom: '10px',
+            color: '#fff', fontSize: '0.9375rem', fontWeight: 700,
+            fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'none',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Text a Friend
+        </a>
+
+        {/* Cancel */}
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%', padding: '12px', background: 'transparent',
+            border: 'none', color: 'var(--muted)', fontSize: '0.875rem',
+            fontFamily: 'inherit', cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const ShareButton: React.FC = () => {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        title="Send to a Friend"
+        style={{
+          position: 'absolute', top: '16px', right: '16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '36px', height: '36px',
+          background: '#ef4444', border: 'none', borderRadius: '10px',
+          cursor: 'pointer', flexShrink: 0,
+        }}
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
           <polyline points="16 6 12 2 8 6" />
           <line x1="12" y1="2" x2="12" y2="15" />
         </svg>
-      )}
-    </button>
+      </button>
+      {open && <ShareModal onClose={() => setOpen(false)} />}
+    </>
   )
 }
 
