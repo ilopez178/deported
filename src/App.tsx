@@ -414,6 +414,44 @@ const InlineLeaderboard: React.FC = () => {
 
 // ── Menu Screen ───────────────────────────────────────────────────────────────
 
+// ── Share Button ──────────────────────────────────────────────────────────────
+
+const SHARE_URL = 'https://irvinglopez.com/deported/'
+const SHARE_TEXT = 'Can you pass the U.S. citizenship test? 🚨 Find out if you get deported →'
+
+const ShareButton: React.FC = () => {
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Should You Get Deported?', text: SHARE_TEXT, url: SHARE_URL })
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(`${SHARE_TEXT} ${SHARE_URL}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleShare}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        width: '100%', maxWidth: '320px', margin: '10px auto 0',
+        padding: '13px', background: 'transparent',
+        border: '1px solid var(--border)', borderRadius: '12px',
+        color: copied ? '#4ade80' : 'var(--text)', fontSize: '0.875rem',
+        fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+        transition: 'border-color 0.2s, color 0.2s',
+      }}
+    >
+      {copied ? '✓ Link Copied!' : '📲 Send to a Friend'}
+    </button>
+  )
+}
+
 const usePlayCount = () => {
   const [count, setCount] = useState<number | null>(null)
   useEffect(() => {
@@ -455,7 +493,7 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
       </p>
       <p style={{
-        color: 'var(--muted)', fontSize: '0.9375rem', lineHeight: 1.5,
+        color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.5,
         maxWidth: '380px', margin: '0 auto 28px',
       }}>
         How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
@@ -465,13 +503,15 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         Begin Screening →
       </button>
 
+      <ShareButton />
+
       {playCount != null && playCount > 0 && (
-        <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '14px', fontWeight: 600 }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text)', marginTop: '14px', fontWeight: 600 }}>
           <span style={{ color: 'var(--white)' }}>{playCount.toLocaleString()}</span> people have been screened
         </p>
       )}
 
-      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: playCount ? '6px' : '20px', lineHeight: 1.5 }}>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: playCount ? '6px' : '20px', lineHeight: 1.6 }}>
         Based on actual citizenship test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
