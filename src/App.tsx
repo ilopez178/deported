@@ -128,9 +128,20 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   }
 }
 
+const getLocation = async (): Promise<{ city: string | null; region: string | null }> => {
+  try {
+    const res = await fetch('https://ipapi.co/json/')
+    const data = await res.json()
+    return { city: data.city ?? null, region: data.region_code ?? null }
+  } catch {
+    return { city: null, region: null }
+  }
+}
+
 const logPlay = async (name: string, score: number, passed: boolean): Promise<void> => {
   try {
-    await supabase.from('plays').insert({ name, score, passed })
+    const { city, region } = await getLocation()
+    await supabase.from('plays').insert({ name, score, passed, city, region })
   } catch (e) {
     console.error('Failed to log play:', e)
   }
