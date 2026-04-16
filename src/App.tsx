@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const QUIZ_LENGTH = 10
-const PASS_SCORE = 7 // 70% — actual USCIS passing threshold
+const PASS_SCORE = 7 // 70% — actual citizenship test passing threshold
 // Leaderboard is now stored in Supabase — see src/lib/supabase.ts
 const PLAYER_KEY = 'deported_player'
 
@@ -447,7 +447,7 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
       </button>
 
       <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.5 }}>
-        Based on actual USCIS naturalization test questions.<br />
+        Based on actual citizenship test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
 
@@ -852,7 +852,7 @@ const ResultScreen: React.FC<{
           </div>
 
           <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginBottom: '20px' }}>
-            USCIS passing score is 7/10 · {tier.pass
+            Passing score is 7/10 · {tier.pass
               ? score === PASS_SCORE ? 'Minimum pass — cutting it close!'
               : `You beat it by ${score - PASS_SCORE} ${score - PASS_SCORE === 1 ? 'question' : 'questions'}`
               : `You missed by ${PASS_SCORE - score} ${PASS_SCORE - score === 1 ? 'question' : 'questions'}`}
@@ -1154,8 +1154,10 @@ const PaywallScreen: React.FC<{
         }}>
           <strong style={{ color: 'var(--white)' }}>{playerName}</strong>, you scored{' '}
           <strong style={{ color: '#ef4444' }}>{score}/10</strong> and got deported.
-          That record is now public, permanent, and very embarrassing.{' '}
-          The only way to clear your name is to retake the test and pass.
+          Your record is <strong style={{ color: 'var(--white)' }}>public</strong>,{' '}
+          <strong style={{ color: 'var(--white)' }}>permanent</strong>, and{' '}
+          <strong style={{ color: 'var(--white)' }}>very embarrassing</strong>.
+          Pay $1 to retake and clear your name.
         </p>
 
         {!clicked ? (
@@ -1163,10 +1165,10 @@ const PaywallScreen: React.FC<{
             {/* Step 1 */}
             <div style={{ textAlign: 'left', marginBottom: '8px' }}>
               <div style={{
-                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
-                color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '8px',
+                fontSize: '0.85rem', fontWeight: 700,
+                color: '#3b82f6', marginBottom: '8px',
               }}>
-                Step 1 — Send <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo
+                Step 1 — Send <strong>${'1'}</strong> on Venmo
               </div>
               <a
                 href="https://venmo.com/u/irvinglopez"
@@ -1201,8 +1203,8 @@ const PaywallScreen: React.FC<{
             {/* Step 2 */}
             <div style={{ textAlign: 'left', marginBottom: '20px', marginTop: '20px' }}>
               <div style={{
-                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
-                color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '8px',
+                fontSize: '0.85rem', fontWeight: 700,
+                color: '#3b82f6', marginBottom: '8px',
               }}>
                 Step 2 — Come back and tap below
               </div>
