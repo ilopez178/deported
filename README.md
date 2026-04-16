@@ -89,6 +89,7 @@ create policy "anon delete" on leaderboard for delete to anon using (true);
 create table plays (
   id bigserial primary key,
   played_at timestamptz default now(),
+  name text,
   score int not null,
   passed bool not null
 );
@@ -98,6 +99,11 @@ alter table plays enable row level security;
 create policy "anon insert" on plays for insert to anon with check (true);
 create policy "anon select" on plays for select to anon using (true);
 ```
+
+> If you already created the table without the `name` column, add it with:
+> ```sql
+> alter table plays add column name text;
+> ```
 
 ### Useful queries
 
@@ -110,6 +116,9 @@ select passed, count(*) from plays group by passed;
 
 -- Average score
 select round(avg(score::numeric), 2) as avg_score from plays;
+
+-- Who played and when
+select name, score, passed, played_at from plays order by played_at desc;
 
 -- Leaderboard snapshot
 select * from leaderboard order by score desc, time_seconds asc;
