@@ -1135,20 +1135,27 @@ const PaywallScreen: React.FC<{
     <div style={page}>
       <div style={{ ...card, maxWidth: '500px', textAlign: 'center' }} className="slide-in">
 
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💸</div>
+        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⛓️</div>
 
         <h2 style={{
           fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 900,
-          color: 'var(--white)', marginBottom: '6px', lineHeight: 1.1,
+          color: 'var(--white)', marginBottom: '4px', lineHeight: 1.1,
         }}>
           Your record stands.
         </h2>
+        <h2 style={{
+          fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900,
+          color: '#ef4444', marginBottom: '16px', lineHeight: 1.1,
+        }}>
+          And it's embarrassing.
+        </h2>
 
         <p style={{
-          color: 'var(--muted)', fontSize: '1rem', lineHeight: 1.5,
+          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '28px',
         }}>
-          Pay <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo to erase it and try again.
+          Pay <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo to erase it and try again.{' '}
+          <span style={{ color: 'var(--muted)' }}>No promises you'll do better.</span>
         </p>
 
         {!clicked ? (
