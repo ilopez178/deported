@@ -12,10 +12,10 @@ const PASS_SCORE = 7 // 70% — actual citizenship test passing threshold
 // Leaderboard is now stored in Supabase — see src/lib/supabase.ts
 const PLAYER_KEY = 'deported_player'
 
-const savePlayer = (name: string, played: boolean) =>
-  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, played }))
+const savePlayer = (name: string, played: boolean, passed?: boolean, score?: number) =>
+  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, played, passed, score }))
 
-const loadPlayer = (): { name: string; played: boolean } | null => {
+const loadPlayer = (): { name: string; played: boolean; passed?: boolean; score?: number } | null => {
   try { return JSON.parse(localStorage.getItem(PLAYER_KEY) ?? 'null') } catch { return null }
 }
 
@@ -559,76 +559,177 @@ const ShareButton: React.FC = () => {
   )
 }
 
-const MenuScreen: React.FC<{ onStart: () => void; hasPlayed: boolean; onLeaderboard: () => void }> = ({ onStart, hasPlayed, onLeaderboard }) => (
+const ScreenedCard: React.FC<{
+  playerName: string
+  passed: boolean
+  score: number
+  onLeaderboard: () => void
+}> = ({ playerName, passed, score, onLeaderboard }) => {
+  const [rank, setRank] = useState<{ position: number; total: number } | null>(null)
+
+  useEffect(() => {
+    loadLeaderboard().then(entries => {
+      const list = entries
+        .filter(e => e.passed === passed)
+        .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
+      const idx = list.findIndex(e => e.name.toLowerCase() === playerName.toLowerCase())
+      if (idx !== -1) setRank({ position: idx + 1, total: list.length })
+    })
+  }, [playerName, passed])
+
+  const tier = getTier(score)
+
+  return (
+    <div style={{ width: '100%', maxWidth: '340px', margin: '0 auto', textAlign: 'center' }}>
+      {/* Result badge */}
+      <div style={{
+        display: 'inline-block',
+        border: `2px solid ${passed ? '#16a34a' : '#ef4444'}`,
+        borderRadius: '8px',
+        padding: '3px 12px',
+        fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em',
+        color: passed ? '#16a34a' : '#ef4444', textTransform: 'uppercase',
+        marginBottom: '16px',
+      }}>
+        {passed ? 'CLEARED — YOU STAYED' : 'DEPORTED'}
+      </div>
+
+      <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>
+        {passed ? '🇺🇸' : '✈️'}
+      </div>
+
+      <div style={{
+        fontSize: '1.4rem', fontWeight: 900, color: 'var(--white)',
+        marginBottom: '4px', letterSpacing: '-0.01em',
+      }}>
+        {tier.title}
+      </div>
+      <div style={{ color: 'var(--text)', fontSize: '0.875rem', lineHeight: 1.5, marginBottom: '16px' }}>
+        {tier.sub}
+      </div>
+
+      {/* Score + rank pill */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', gap: '10px',
+        marginBottom: '20px', flexWrap: 'wrap',
+      }}>
+        <div style={{
+          padding: '6px 16px', borderRadius: '99px',
+          background: passed ? '#052e16' : '#1f0808',
+          border: `1px solid ${passed ? '#16a34a44' : '#ef444444'}`,
+          fontSize: '0.8rem', fontWeight: 700,
+          color: passed ? '#4ade80' : '#f87171',
+        }}>
+          {score}/10 correct
+        </div>
+        {rank && (
+          <div style={{
+            padding: '6px 16px', borderRadius: '99px',
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)',
+          }}>
+            {passed
+              ? `#${rank.position} of ${rank.total} who stayed`
+              : `#${rank.position} on the shame wall`}
+          </div>
+        )}
+      </div>
+
+      {/* Ghost CTA */}
+      <button onClick={onLeaderboard} style={{
+        display: 'block', width: '100%', padding: '13px',
+        background: 'transparent',
+        border: `1px solid ${passed ? '#16a34a55' : '#ef444455'}`,
+        borderRadius: '12px',
+        color: passed ? '#16a34a' : '#ef4444',
+        fontSize: '0.9rem', fontWeight: 700,
+        fontFamily: 'inherit', cursor: 'pointer',
+      }}>
+        🏆 View the Federal Record
+      </button>
+    </div>
+  )
+}
+
+const MenuScreen: React.FC<{
+  onStart: () => void
+  hasPlayed: boolean
+  playerName: string
+  playerResult: { passed: boolean; score: number } | null
+  onLeaderboard: () => void
+}> = ({ onStart, hasPlayed, playerName, playerResult, onLeaderboard }) => (
   <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
-      {/* Share icon — top right of card */}
       <ShareButton />
 
-      <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
-
-      <div style={{
-        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
-        color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
-      }} className="siren">
-        ⚠ U.S. Citizenship Screening System ⚠
-      </div>
-
-      <h1 style={{
-        fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 900,
-        color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
-        letterSpacing: '-0.02em',
-      }}>
-        Should You Get<br />
-        <span style={{ color: '#ef4444' }}>Deported?</span>
-      </h1>
-
-      <p style={{
-        color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
-        maxWidth: '380px', margin: '0 auto 4px',
-      }}>
-        {QUIZ_LENGTH} random U.S. citizenship test questions.{' '}
-        You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
-      </p>
-      <p style={{
-        color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.5,
-        maxWidth: '380px', margin: '0 auto 28px',
-      }}>
-        How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
-      </p>
-
-      {hasPlayed ? (
-        <div style={{ maxWidth: '320px', margin: '0 auto' }}>
+      {hasPlayed && playerResult ? (
+        /* ── Already screened — show result only ── */
+        <>
           <div style={{
-            padding: '16px', background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: '12px', color: 'var(--text)', fontSize: '0.9rem',
-            lineHeight: 1.5, marginBottom: '10px',
+            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+            color: 'var(--muted)', marginBottom: '20px', textTransform: 'uppercase',
           }}>
-            🚫 <strong style={{ color: 'var(--white)' }}>You've already been screened, citizen.</strong><br />
-            <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>One shot. That was yours.</span>
+            ⚠ U.S. Citizenship Screening System ⚠
           </div>
-          <button onClick={onLeaderboard} style={{
-            display: 'block', width: '100%', padding: '13px',
-            background: 'transparent', border: '1px solid var(--border)',
-            borderRadius: '12px', color: 'var(--text)', fontSize: '0.875rem',
-            fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-          }}>
-            🏆 View the Federal Record
-          </button>
-        </div>
+          <ScreenedCard
+            playerName={playerName}
+            passed={playerResult.passed}
+            score={playerResult.score}
+            onLeaderboard={onLeaderboard}
+          />
+          <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.6 }}>
+            Based on actual citizenship test questions.<br />
+            No lawyers were harmed in the making of this quiz.
+          </p>
+        </>
       ) : (
-        <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
-          Begin Screening →
-        </button>
+        /* ── Not yet screened — full intro + leaderboard ── */
+        <>
+          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
+
+          <div style={{
+            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+            color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
+          }} className="siren">
+            ⚠ U.S. Citizenship Screening System ⚠
+          </div>
+
+          <h1 style={{
+            fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 900,
+            color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+          }}>
+            Should You Get<br />
+            <span style={{ color: '#ef4444' }}>Deported?</span>
+          </h1>
+
+          <p style={{
+            color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
+            maxWidth: '380px', margin: '0 auto 4px',
+          }}>
+            {QUIZ_LENGTH} random U.S. citizenship test questions.{' '}
+            You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
+          </p>
+          <p style={{
+            color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.5,
+            maxWidth: '380px', margin: '0 auto 28px',
+          }}>
+            How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
+          </p>
+
+          <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
+            Begin Screening →
+          </button>
+
+          <InlineLeaderboard />
+
+          <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '20px', lineHeight: 1.6 }}>
+            Based on actual citizenship test questions.<br />
+            No lawyers were harmed in the making of this quiz.
+          </p>
+        </>
       )}
-
-      <InlineLeaderboard />
-
-      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '20px', lineHeight: 1.6 }}>
-        Based on actual citizenship test questions.<br />
-        No lawyers were harmed in the making of this quiz.
-      </p>
     </div>
   </div>
 )
@@ -1313,6 +1414,12 @@ export default function App() {
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
   const [hasPlayed, setHasPlayed] = useState(() => loadPlayer()?.played ?? false)
+  const [playerResult, setPlayerResult] = useState<{ passed: boolean; score: number } | null>(() => {
+    const p = loadPlayer()
+    return p?.played && p.passed !== undefined && p.score !== undefined
+      ? { passed: p.passed, score: p.score }
+      : null
+  })
 
   // Restore name on load
   useEffect(() => {
@@ -1320,6 +1427,9 @@ export default function App() {
     if (player) {
       setPlayerName(player.name)
       setHasPlayed(player.played ?? false)
+      if (player.played && player.passed !== undefined && player.score !== undefined) {
+        setPlayerResult({ passed: player.passed, score: player.score })
+      }
     }
   }, [])
 
@@ -1374,8 +1484,9 @@ export default function App() {
       }),
       logPlay(playerName, quiz.score, tier.pass),
     ])
-    savePlayer(playerName, true)
+    savePlayer(playerName, true, tier.pass, quiz.score)
     setHasPlayed(true)
+    setPlayerResult({ passed: tier.pass, score: quiz.score })
     setFinalScore(quiz.score)
     setScreen('result')
   }, [quiz, playerName])
@@ -1395,8 +1506,9 @@ export default function App() {
         }),
         logPlay(playerName, quiz.score, tier.pass),
       ])
-      savePlayer(playerName, true)
+      savePlayer(playerName, true, tier.pass, quiz.score)
       setHasPlayed(true)
+      setPlayerResult({ passed: tier.pass, score: quiz.score })
       setFinalScore(quiz.score)
       setScreen('result')
     } else {
@@ -1410,7 +1522,7 @@ export default function App() {
     }
   }, [quiz, playerName])
 
-  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} hasPlayed={hasPlayed} onLeaderboard={goToLeaderboard} />
+  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} hasPlayed={hasPlayed} playerName={playerName} playerResult={playerResult} onLeaderboard={goToLeaderboard} />
   if (screen === 'name') return <NameScreen onSubmit={launchQuiz} onBack={goToMenu} defaultName={playerName} />
   if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} hasPlayed={hasPlayed} />
   if (screen === 'result') return <ResultScreen score={finalScore} playerName={playerName} onLeaderboard={goToLeaderboard} />
