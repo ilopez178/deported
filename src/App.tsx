@@ -1230,7 +1230,7 @@ const PaywallScreen: React.FC<{
           marginBottom: '28px',
         }}>
           Pay <strong style={{ color: '#ef4444' }}>$1</strong> on Venmo to erase it and try again.{' '}
-          <span style={{ color: 'var(--muted)' }}>No promises you'll do better.</span>
+          <span style={{ color: 'var(--text)' }}>No promises you'll do better.</span>
         </p>
 
         {!clicked ? (
@@ -1285,7 +1285,7 @@ const PaywallScreen: React.FC<{
               ✈️ Accept My Deportation
             </button>
 
-            <p style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '16px' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text)', marginTop: '16px' }}>
               No refunds if you get deported again.
             </p>
           </>
