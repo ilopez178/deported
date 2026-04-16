@@ -611,18 +611,18 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         Begin Screening →
       </button>
 
+      <InlineLeaderboard />
+
       {playCount != null && playCount > 0 && (
-        <p style={{ fontSize: '0.78rem', color: 'var(--text)', marginTop: '14px', fontWeight: 600 }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text)', marginTop: '20px', fontWeight: 600 }}>
           <span style={{ color: 'var(--white)' }}>{playCount.toLocaleString()}</span> people have been screened
         </p>
       )}
 
-      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: playCount ? '6px' : '20px', lineHeight: 1.6 }}>
+      <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '6px', lineHeight: 1.6 }}>
         Based on actual citizenship test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
-
-      <InlineLeaderboard />
     </div>
   </div>
   )
