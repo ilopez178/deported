@@ -12,10 +12,10 @@ const PASS_SCORE = 7 // 70% — actual citizenship test passing threshold
 // Leaderboard is now stored in Supabase — see src/lib/supabase.ts
 const PLAYER_KEY = 'deported_player'
 
-const savePlayer = (name: string, deported: boolean) =>
-  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, deported }))
+const savePlayer = (name: string, played: boolean) =>
+  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, played }))
 
-const loadPlayer = (): { name: string; deported: boolean } | null => {
+const loadPlayer = (): { name: string; played: boolean } | null => {
   try { return JSON.parse(localStorage.getItem(PLAYER_KEY) ?? 'null') } catch { return null }
 }
 
@@ -559,7 +559,7 @@ const ShareButton: React.FC = () => {
   )
 }
 
-const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+const MenuScreen: React.FC<{ onStart: () => void; hasPlayed: boolean; onLeaderboard: () => void }> = ({ onStart, hasPlayed, onLeaderboard }) => (
   <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
@@ -598,9 +598,30 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
         How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
       </p>
 
-      <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
-        Begin Screening →
-      </button>
+      {hasPlayed ? (
+        <div style={{ maxWidth: '320px', margin: '0 auto' }}>
+          <div style={{
+            padding: '16px', background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: '12px', color: 'var(--text)', fontSize: '0.9rem',
+            lineHeight: 1.5, marginBottom: '10px',
+          }}>
+            🚫 <strong style={{ color: 'var(--white)' }}>You've already been screened, citizen.</strong><br />
+            <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>One shot. That was yours.</span>
+          </div>
+          <button onClick={onLeaderboard} style={{
+            display: 'block', width: '100%', padding: '13px',
+            background: 'transparent', border: '1px solid var(--border)',
+            borderRadius: '12px', color: 'var(--text)', fontSize: '0.875rem',
+            fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+          }}>
+            🏆 View the Federal Record
+          </button>
+        </div>
+      ) : (
+        <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
+          Begin Screening →
+        </button>
+      )}
 
       <InlineLeaderboard />
 
@@ -927,10 +948,8 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
 const ResultScreen: React.FC<{
   score: number
   playerName: string
-  wasDeportedRetry: boolean
-  onRestart: () => void
   onLeaderboard: () => void
-}> = ({ score, playerName, wasDeportedRetry, onRestart, onLeaderboard }) => {
+}> = ({ score, playerName, onLeaderboard }) => {
   const tier = getTier(score)
   const pct = Math.round((score / QUIZ_LENGTH) * 100)
   const wrongCount = QUIZ_LENGTH - score
@@ -998,43 +1017,6 @@ const ResultScreen: React.FC<{
           <p style={{ color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65, marginBottom: '24px' }}>
             {tier.sub}
           </p>
-
-          {/* Redemption banner for paid retries */}
-          {wasDeportedRetry && tier.pass && (
-            <div className="pop-in" style={{
-              background: 'linear-gradient(135deg, #052e16 0%, #0a3d1f 100%)',
-              border: '2px solid #16a34a',
-              borderRadius: '14px', padding: '18px 20px',
-              textAlign: 'center', marginBottom: '20px',
-            }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>🎉</div>
-              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#4ade80', marginBottom: '4px' }}>
-                You're Off the Shame Wall!
-              </div>
-              <div style={{ fontSize: '0.825rem', color: '#86efac', lineHeight: 1.5 }}>
-                Your deportation record has been wiped. You paid your debt to society
-                and proved you belong here. Welcome back, citizen.
-              </div>
-            </div>
-          )}
-
-          {wasDeportedRetry && !tier.pass && (
-            <div className="pop-in" style={{
-              background: 'linear-gradient(135deg, #1f0808 0%, #3a0d0d 100%)',
-              border: '2px solid #dc2626',
-              borderRadius: '14px', padding: '18px 20px',
-              textAlign: 'center', marginBottom: '20px',
-            }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>✈️</div>
-              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f87171', marginBottom: '4px' }}>
-                Still Deported. Again.
-              </div>
-              <div style={{ fontSize: '0.825rem', color: '#fca5a5', lineHeight: 1.5 }}>
-                You paid $1, took the test again, and still got deported.
-                Your shame record has been updated. No refunds.
-              </div>
-            </div>
-          )}
 
           {/* Score card */}
           <div style={{
@@ -1124,30 +1106,13 @@ const ResultScreen: React.FC<{
             </div>
           )}
 
-          {/* CTAs */}
-          <button onClick={onRestart} className={`primary-btn${tier.pass ? ' safe-btn' : ''}`} style={{
-            background: tier.pass ? undefined : '#ef4444',
-            marginBottom: '10px',
-          }}>
-            Try Again {tier.pass ? '' : '→'}
-          </button>
-
+          {/* CTA — leaderboard only, no retry */}
           {tier.pass ? (
-            <button onClick={onLeaderboard} style={{
-              display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid #16a34a55',
-              borderRadius: '12px', color: '#16a34a', fontSize: '0.875rem',
-              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-            }}>
+            <button onClick={onLeaderboard} className="primary-btn safe-btn">
               🏆 View Full Leaderboard
             </button>
           ) : (
-            <button onClick={onLeaderboard} style={{
-              display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid #ef444455',
-              borderRadius: '12px', color: '#ef4444', fontSize: '0.875rem',
-              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-            }}>
+            <button onClick={onLeaderboard} className="primary-btn">
               ✈️ Accept My Deportation
             </button>
           )}
@@ -1323,118 +1288,6 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
 
 // ── Paywall Screen ────────────────────────────────────────────────────────────
 
-const PaywallScreen: React.FC<{
-  playerName: string
-  score: number
-  onPay: () => void
-  onDecline: () => void
-}> = ({ onPay, onDecline }) => {
-  const [clicked, setClicked] = useState(false)
-
-  const handlePay = () => {
-    setClicked(true)
-    setTimeout(() => onPay(), 1600)
-  }
-
-  return (
-    <div style={page}>
-      <div style={{ ...card, maxWidth: '500px', textAlign: 'center' }} className="slide-in">
-
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⛓️</div>
-
-        <h2 style={{
-          fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 900,
-          color: 'var(--white)', marginBottom: '4px', lineHeight: 1.1,
-        }}>
-          Your record stands.
-        </h2>
-        <h2 style={{
-          fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900,
-          color: '#ef4444', marginBottom: '16px', lineHeight: 1.1,
-        }}>
-          And it's embarrassing.
-        </h2>
-
-        <p style={{
-          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
-          marginBottom: '28px',
-        }}>
-          Pay <strong style={{ color: '#ef4444' }}>$1</strong> on Venmo to erase it and try again.{' '}
-          <span style={{ color: 'var(--text)' }}>No promises you'll do better.</span>
-        </p>
-
-        {!clicked ? (
-          <>
-            {/* Step 1 */}
-            <div style={{ textAlign: 'left', marginBottom: '8px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>
-                Step 1 — Send $1
-              </div>
-              <a
-                href="https://venmo.com/u/irvinglopez"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '14px',
-                  background: 'var(--surface)', border: '1px solid #ef4444',
-                  borderRadius: '12px', padding: '16px',
-                  textDecoration: 'none', cursor: 'pointer',
-                }}
-              >
-                <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>💸</span>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ color: 'var(--white)', fontWeight: 800, fontSize: '1.1rem' }}>@irvinglopez</div>
-                  <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '2px' }}>Venmo</div>
-                </div>
-                <span style={{
-                  fontSize: '0.8rem', fontWeight: 700, color: '#ef4444',
-                  flexShrink: 0, background: '#ef444415',
-                  borderRadius: '8px', padding: '6px 12px',
-                }}>
-                  Open →
-                </span>
-              </a>
-            </div>
-
-            {/* Step 2 */}
-            <div style={{ textAlign: 'left', marginBottom: '16px', marginTop: '16px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>
-                Step 2 — Confirm below
-              </div>
-              <button onClick={handlePay} className="primary-btn">
-                I Paid — Let Me Try Again
-              </button>
-            </div>
-
-            <button onClick={onDecline} style={{
-              display: 'block', width: '100%', padding: '13px',
-              background: 'transparent', border: '1px solid #ef444455',
-              borderRadius: '12px', color: '#ef4444', fontSize: '0.875rem',
-              fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
-            }}>
-              ✈️ Accept My Deportation
-            </button>
-
-            <p style={{ fontSize: '0.75rem', color: 'var(--text)', marginTop: '16px' }}>
-              No refunds if you get deported again.
-            </p>
-          </>
-        ) : (
-          <div className="fade-up" style={{
-            padding: '20px', background: '#0a2515', border: '1px solid #16a34a',
-            borderRadius: '12px', color: '#4ade80', fontSize: '1rem', fontWeight: 700,
-          }}>
-            Clearing your record...<br />
-            <span style={{ fontSize: '0.8rem', color: '#86efac', fontWeight: 400 }}>
-              Don't blow it this time.
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ── App state ─────────────────────────────────────────────────────────────────
 
 interface QuizState {
@@ -1448,23 +1301,21 @@ interface QuizState {
   startTime: number
 }
 
-type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard' | 'paywall'
+type Screen = 'menu' | 'name' | 'quiz' | 'result' | 'leaderboard'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
   const [playerName, setPlayerName] = useState('')
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
-  const [wasDeportedRetry, setWasDeportedRetry] = useState(false)
-  // Persisted across sessions via localStorage
-  const [sessionDeported, setSessionDeported] = useState(() => loadPlayer()?.deported ?? false)
+  const [hasPlayed, setHasPlayed] = useState(() => loadPlayer()?.played ?? false)
 
-  // Restore name + deported status on load
+  // Restore name on load
   useEffect(() => {
     const player = loadPlayer()
     if (player) {
       setPlayerName(player.name)
-      setSessionDeported(player.deported)
+      setHasPlayed(player.played ?? false)
     }
   }, [])
 
@@ -1488,29 +1339,6 @@ export default function App() {
     })
     setScreen('quiz')
   }, [])
-
-  // "I paid" — skip name screen, reuse existing name, override their record
-  const handlePaidRetry = useCallback(() => {
-    setSessionDeported(false)
-    setWasDeportedRetry(true)
-    savePlayer(playerName, false)
-    launchQuiz(playerName)
-  }, [playerName, launchQuiz])
-
-  const startQuiz = useCallback((name: string) => {
-    setWasDeportedRetry(false)
-    launchQuiz(name)
-  }, [launchQuiz])
-
-  const handleRetry = useCallback(() => {
-    const passed = getTier(finalScore).pass
-    if (passed) {
-      setWasDeportedRetry(false)
-      setScreen('name')
-    } else {
-      setScreen('paywall')
-    }
-  }, [finalScore])
 
   const handleAnswer = useCallback((answer: string) => {
     setQuiz(prev => {
@@ -1542,8 +1370,8 @@ export default function App() {
       }),
       logPlay(playerName, quiz.score, tier.pass),
     ])
-    setSessionDeported(!tier.pass)
-    savePlayer(playerName, !tier.pass)
+    savePlayer(playerName, true)
+    setHasPlayed(true)
     setFinalScore(quiz.score)
     setScreen('result')
   }, [quiz, playerName])
@@ -1563,8 +1391,8 @@ export default function App() {
         }),
         logPlay(playerName, quiz.score, tier.pass),
       ])
-      setSessionDeported(!tier.pass)
-      savePlayer(playerName, !tier.pass)
+      savePlayer(playerName, true)
+      setHasPlayed(true)
       setFinalScore(quiz.score)
       setScreen('result')
     } else {
@@ -1578,29 +1406,10 @@ export default function App() {
     }
   }, [quiz, playerName])
 
-  if (screen === 'menu') return <MenuScreen onStart={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
-  if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} defaultName={playerName} />
-  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
-  if (screen === 'paywall') return (
-    <PaywallScreen
-      playerName={playerName}
-      score={finalScore}
-      onPay={handlePaidRetry}
-      onDecline={goToMenu}
-    />
-  )
-
-  if (screen === 'result') {
-    return (
-      <ResultScreen
-        score={finalScore}
-        playerName={playerName}
-        wasDeportedRetry={wasDeportedRetry}
-        onRestart={handleRetry}
-        onLeaderboard={goToLeaderboard}
-      />
-    )
-  }
+  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} hasPlayed={hasPlayed} onLeaderboard={goToLeaderboard} />
+  if (screen === 'name') return <NameScreen onSubmit={launchQuiz} onBack={goToMenu} defaultName={playerName} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={goToMenu} />
+  if (screen === 'result') return <ResultScreen score={finalScore} playerName={playerName} onLeaderboard={goToLeaderboard} />
 
   if (!quiz) return null
 
