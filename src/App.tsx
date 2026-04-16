@@ -301,57 +301,72 @@ const InlineLeaderboard: React.FC = () => {
     .filter(e => !e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
 
+  const LbSection = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px',
+    }}>
+      <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+      <div style={{
+        fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.06em',
+        textTransform: 'uppercase', color: 'var(--white)',
+        display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
+      }}>
+        🏆 Federal Screening Record
+      </div>
+      <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+    </div>
+  )
+
   if (loading) return (
-    <div style={{ marginTop: '28px', textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', padding: '20px' }}>
-      Loading records...
+    <div style={{ marginTop: '32px' }}>
+      <LbSection />
+      <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', padding: '20px' }}>
+        Loading records...
+      </div>
     </div>
   )
 
   if (entries.length === 0) return (
-    <div style={{
-      marginTop: '28px', padding: '20px',
-      background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: '14px', textAlign: 'center',
-    }}>
-      <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>🏆</div>
-      <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
-        No one has been screened yet.<br />Be the first on the board.
+    <div style={{ marginTop: '32px' }}>
+      <LbSection />
+      <div style={{
+        padding: '20px',
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: '14px', textAlign: 'center',
+      }}>
+        <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
+          No one has been screened yet.<br />Be the first on the board.
+        </div>
       </div>
     </div>
   )
 
   return (
-    <div style={{ marginTop: '28px', textAlign: 'left' }}>
-      <div style={{
-        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em',
-        textTransform: 'uppercase', color: 'var(--muted)',
-        textAlign: 'center', marginBottom: '14px',
-      }}>
-        🏆 Federal Screening Record
-      </div>
+    <div style={{ marginTop: '32px', textAlign: 'left' }}>
+      <LbSection />
 
       {stayed.length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '16px' }}>
           <div style={{
-            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#22c55e', marginBottom: '6px',
+            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px',
           }}>🇺🇸 Stayed!</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {stayed.map((e, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '8px 12px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 12px',
                 background: i === 0 ? '#052e16' : 'var(--surface)',
-                border: `1px solid ${i === 0 ? '#16a34a33' : 'var(--border)'}`,
+                border: `1px solid ${i === 0 ? '#16a34a44' : 'var(--border)'}`,
                 borderRadius: '8px',
               }}>
-                <span style={{ fontSize: '0.75rem', minWidth: '18px', color: 'var(--muted)' }}>
+                <span style={{ fontSize: '0.75rem', minWidth: '20px', flexShrink: 0, color: 'var(--muted)' }}>
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                 </span>
-                <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem' }}>{e.name}</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{e.score}/10</span>
-                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600 }}>⏱ {formatTime(e.timeSeconds)}</span>}
-                <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
+                <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e', flexShrink: 0 }}>{e.score}/10</span>
+                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
               </div>
             ))}
           </div>
@@ -361,22 +376,22 @@ const InlineLeaderboard: React.FC = () => {
       {deported.length > 0 && (
         <div>
           <div style={{
-            fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#ef4444', marginBottom: '6px',
+            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px',
           }}>✈️ Deported!</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {deported.map((e, i) => (
               <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '8px 12px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 12px',
                 background: 'var(--surface)', border: '1px solid var(--border)',
                 borderRadius: '8px', opacity: 0.75,
               }}>
-                <span style={{ fontSize: '0.8rem' }}>🧳</span>
-                <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem' }}>{e.name}</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>{e.score}/10</span>
-                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 600 }}>⏱ {formatTime(e.timeSeconds)}</span>}
-                <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>{formatDate(e.date)}</span>
+                <span style={{ fontSize: '0.8rem', flexShrink: 0 }}>🧳</span>
+                <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{e.score}/10</span>
+                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
               </div>
             ))}
           </div>
@@ -411,11 +426,17 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
       </h1>
 
       <p style={{
-        color: 'var(--text)', fontSize: '1rem', lineHeight: 1.65,
+        color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
+        maxWidth: '380px', margin: '0 auto 4px',
+      }}>
+        {QUIZ_LENGTH} random citizenship test questions.{' '}
+        You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
+      </p>
+      <p style={{
+        color: 'var(--muted)', fontSize: '0.9375rem', lineHeight: 1.5,
         maxWidth: '380px', margin: '0 auto 28px',
       }}>
-        {QUIZ_LENGTH} random USCIS civics questions. You need {PASS_SCORE} right to stay.
-        How American are <em style={{ color: 'var(--white)' }}>you</em>, really?
+        How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
       </p>
 
       <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
@@ -805,9 +826,9 @@ const ResultScreen: React.FC<{
                       <span style={{ fontSize: '0.75rem', minWidth: '18px', color: isMe ? '#f59e0b' : 'var(--muted)' }}>
                         {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                       </span>
-                      <span style={{ flex: 1, fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--white)' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{e.score}/10</span>
-                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)' }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isMe ? 800 : 600, color: isMe ? 'var(--white)' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e', flexShrink: 0 }}>{e.score}/10</span>
+                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
                     </div>
                   )
                 })}
@@ -834,9 +855,9 @@ const ResultScreen: React.FC<{
                       opacity: isMe ? 1 : 0.65,
                     }}>
                       <span style={{ fontSize: '0.8rem' }}>🧳</span>
-                      <span style={{ flex: 1, fontWeight: isMe ? 800 : 600, color: isMe ? '#fca5a5' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444' }}>{e.score}/10</span>
-                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)' }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: isMe ? 800 : 600, color: isMe ? '#fca5a5' : 'var(--text)', fontSize: '0.875rem' }}>{e.name}{isMe ? ' ← you' : ''}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{e.score}/10</span>
+                      {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
                     </div>
                   )
                 })}
@@ -942,21 +963,21 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
                   }}>
                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                   </span>
-                  <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.9375rem' }}>
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 700, color: 'var(--white)', fontSize: '0.9375rem' }}>
                     {e.name}
                   </span>
                   <span style={{
-                    fontSize: '0.8rem', fontWeight: 700,
-                    color: '#22c55e', minWidth: '50px', textAlign: 'right',
+                    fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
+                    color: '#22c55e', minWidth: '44px', textAlign: 'right',
                   }}>
                     {e.score}/10
                   </span>
                   {e.timeSeconds != null && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700, minWidth: '52px', textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700, flexShrink: 0, minWidth: '48px', textAlign: 'right' }}>
                       ⏱ {formatTime(e.timeSeconds)}
                     </span>
                   )}
-                  <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
+                  <span className="lb-date" style={{ fontSize: '0.72rem', color: 'var(--muted)', flexShrink: 0, minWidth: '40px', textAlign: 'right' }}>
                     {formatDate(e.date)}
                   </span>
                 </div>
@@ -992,21 +1013,21 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
                   opacity: 0.8,
                 }}>
                   <span style={{ fontSize: '0.85rem' }}>🧳</span>
-                  <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
                     {e.name}
                   </span>
                   <span style={{
-                    fontSize: '0.8rem', fontWeight: 700,
-                    color: '#ef4444', minWidth: '50px', textAlign: 'right',
+                    fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
+                    color: '#ef4444', minWidth: '44px', textAlign: 'right',
                   }}>
                     {e.score}/10
                   </span>
                   {e.timeSeconds != null && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 600, minWidth: '52px', textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0, minWidth: '48px', textAlign: 'right' }}>
                       ⏱ {formatTime(e.timeSeconds)}
                     </span>
                   )}
-                  <span style={{ fontSize: '0.72rem', color: 'var(--muted)', minWidth: '44px', textAlign: 'right' }}>
+                  <span className="lb-date" style={{ fontSize: '0.72rem', color: 'var(--muted)', flexShrink: 0, minWidth: '40px', textAlign: 'right' }}>
                     {formatDate(e.date)}
                   </span>
                 </div>

@@ -161,3 +161,28 @@ body {
   background: #15803d;
   box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
 }
+
+/* ── Mobile / responsive ───────────────────────────── */
+
+@media (max-width: 480px) {
+  /* Hide leaderboard date column on small phones */
+  .lb-date { display: none; }
+
+  /* Tighter option buttons on mobile */
+  .option-btn {
+    padding: 13px 14px;
+    font-size: 0.9rem;
+  }
+
+  /* Slightly smaller primary button */
+  .primary-btn {
+    padding: 14px 24px;
+    font-size: 0.9375rem;
+  }
+}
+
+/* Minimum touch target on mobile */
+@media (hover: none) {
+  .option-btn { min-height: 48px; }
+  .primary-btn { min-height: 52px; }
+}
