@@ -430,7 +430,7 @@ const InlineLeaderboard: React.FC = () => {
 // ── Share Button ──────────────────────────────────────────────────────────────
 
 const SHARE_URL = 'https://irvinglopez.com/deported/'
-const SHARE_TEXT = 'Try this game!\n\nCan you stay in the United States of America? 🚨 Find out if you get deported →'
+const SHARE_TEXT = 'Try this quiz!\n\nCan you stay in the United States of America? 🚨 Find out if you get deported →'
 
 const ShareModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [copied, setCopied] = useState(false)
