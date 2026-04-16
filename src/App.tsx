@@ -1171,7 +1171,7 @@ const PaywallScreen: React.FC<{
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
-                  background: 'var(--surface)', border: '1px solid #16a34a',
+                  background: 'var(--surface)', border: '1px solid #ef4444',
                   borderRadius: '12px', padding: '16px',
                   textDecoration: 'none', cursor: 'pointer',
                 }}
@@ -1182,8 +1182,8 @@ const PaywallScreen: React.FC<{
                   <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '2px' }}>Venmo</div>
                 </div>
                 <span style={{
-                  fontSize: '0.8rem', fontWeight: 700, color: '#16a34a',
-                  flexShrink: 0, background: '#16a34a15',
+                  fontSize: '0.8rem', fontWeight: 700, color: '#ef4444',
+                  flexShrink: 0, background: '#ef444415',
                   borderRadius: '8px', padding: '6px 12px',
                 }}>
                   Open →
