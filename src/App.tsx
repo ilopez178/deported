@@ -583,7 +583,7 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
 
 // ── Quiz Screen ───────────────────────────────────────────────────────────────
 
-const QUESTION_TIME = 90 // seconds per question
+const QUESTION_TIME = 60 // seconds per question
 
 interface QuizScreenProps {
   question: Question
