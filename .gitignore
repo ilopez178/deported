@@ -3,3 +3,4 @@ dist
 .vscode
 .claude
 mise.toml
+.env

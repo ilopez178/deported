@@ -3,12 +3,13 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { QUESTIONS } from '@/data/questions'
 import { shuffleArray } from '@utils/helpers'
 import type { Question } from '@types'
+import { supabase } from '@/lib/supabase'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const QUIZ_LENGTH = 10
 const PASS_SCORE = 7 // 70% — actual USCIS passing threshold
-const LEADERBOARD_KEY = 'deported_leaderboard_v2'
+// Leaderboard is now stored in Supabase — see src/lib/supabase.ts
 
 const CORRECT_QUIPS = [
   '🦅 Freedom secured!',
@@ -99,22 +100,43 @@ interface LeaderboardEntry {
   date: number
 }
 
-const loadLeaderboard = (): LeaderboardEntry[] => {
+const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   try {
-    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? '[]')
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('*')
+      .order('score', { ascending: false })
+    if (error) throw error
+    return (data ?? []).map(row => ({
+      name: row.name,
+      score: row.score,
+      timeSeconds: row.time_seconds,
+      passed: row.passed,
+      date: row.date,
+    }))
   } catch {
     return []
   }
 }
 
-const saveToLeaderboard = (entry: LeaderboardEntry, override = false) => {
-  let existing = loadLeaderboard()
-  if (override) {
-    // Remove all previous entries for this name (they paid to clear their record)
-    existing = existing.filter(e => e.name.toLowerCase() !== entry.name.toLowerCase())
+const saveToLeaderboard = async (entry: LeaderboardEntry, override = false): Promise<void> => {
+  try {
+    if (override) {
+      await supabase
+        .from('leaderboard')
+        .delete()
+        .ilike('name', entry.name)
+    }
+    await supabase.from('leaderboard').insert({
+      name: entry.name,
+      score: entry.score,
+      time_seconds: entry.timeSeconds ?? null,
+      passed: entry.passed,
+      date: entry.date,
+    })
+  } catch (e) {
+    console.error('Failed to save to leaderboard:', e)
   }
-  existing.push(entry)
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(existing))
 }
 
 const formatDate = (ts: number) => {
@@ -254,7 +276,12 @@ const card: React.CSSProperties = {
 // ── Inline Leaderboard (used on home screen) ──────────────────────────────────
 
 const InlineLeaderboard: React.FC = () => {
-  const entries = loadLeaderboard()
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadLeaderboard().then(data => { setEntries(data); setLoading(false) })
+  }, [])
 
   const stayed = entries
     .filter(e => e.passed)
@@ -264,6 +291,12 @@ const InlineLeaderboard: React.FC = () => {
   const deported = entries
     .filter(e => !e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
+
+  if (loading) return (
+    <div style={{ marginTop: '28px', textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', padding: '20px' }}>
+      Loading records...
+    </div>
+  )
 
   if (entries.length === 0) return (
     <div style={{
@@ -650,8 +683,9 @@ const ResultScreen: React.FC<{
   const pct = Math.round((score / QUIZ_LENGTH) * 100)
   const wrongCount = QUIZ_LENGTH - score
 
-  // For failed players: find their position in the deported list
-  const allEntries = loadLeaderboard()
+  const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([])
+  useEffect(() => { loadLeaderboard().then(setAllEntries) }, [])
+
   const deportedList = allEntries
     .filter(e => !e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
@@ -660,7 +694,6 @@ const ResultScreen: React.FC<{
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
     .slice(0, 10)
 
-  // Find this player's most recent entry in the relevant list
   const myDeportedIdx = (() => { let r = -1; deportedList.forEach((e, i) => { if (e.name.toLowerCase() === playerName.toLowerCase()) r = i }); return r })()
   const myStayedIdx  = (() => { let r = -1; stayedList.forEach((e, i) => { if (e.name.toLowerCase() === playerName.toLowerCase()) r = i }); return r })()
 
@@ -832,7 +865,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
 
   useEffect(() => {
-    setEntries(loadLeaderboard())
+    loadLeaderboard().then(setEntries)
   }, [])
 
   const stayed = entries
@@ -1172,12 +1205,12 @@ export default function App() {
     })
   }, [])
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (!quiz) return
     if (quiz.currentIndex + 1 >= QUIZ_LENGTH) {
       const tier = getTier(quiz.score)
       const timeSeconds = Math.round((Date.now() - quiz.startTime) / 1000)
-      saveToLeaderboard({
+      await saveToLeaderboard({
         name: playerName,
         score: quiz.score,
         timeSeconds,
