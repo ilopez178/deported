@@ -594,6 +594,7 @@ interface QuizScreenProps {
   selectedAnswer: string | null
   isCorrect: boolean | null
   quip: string
+  startTime: number
   onAnswer: (a: string) => void
   onNext: () => void
   onTimeout: () => void
@@ -601,24 +602,29 @@ interface QuizScreenProps {
 
 const QuizScreen: React.FC<QuizScreenProps> = ({
   question, questionNumber, total, score, wrongCount,
-  selectedAnswer, isCorrect, quip, onAnswer, onNext, onTimeout,
+  selectedAnswer, isCorrect, quip, startTime, onAnswer, onNext, onTimeout,
 }) => {
   const answered = selectedAnswer !== null
   const progressPct = ((questionNumber - 1) / total) * 100
 
-  // Per-question countdown
-  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME)
-  useEffect(() => { setTimeLeft(QUESTION_TIME) }, [questionNumber])
+  // Global quiz countdown — based on wall clock from startTime, never resets on question change
+  const [timeLeft, setTimeLeft] = useState(() =>
+    Math.max(0, QUESTION_TIME - Math.floor((Date.now() - startTime) / 1000))
+  )
+  const onTimeoutRef = useRef(onTimeout)
+  useEffect(() => { onTimeoutRef.current = onTimeout }, [onTimeout])
+
   useEffect(() => {
-    if (answered) return
     const id = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) { clearInterval(id); onTimeout(); return 0 }
-        return prev - 1
-      })
+      const remaining = Math.max(0, QUESTION_TIME - Math.floor((Date.now() - startTime) / 1000))
+      setTimeLeft(remaining)
+      if (remaining <= 0) {
+        clearInterval(id)
+        onTimeoutRef.current()
+      }
     }, 1000)
     return () => clearInterval(id)
-  }, [questionNumber, answered, onTimeout])
+  }, [startTime]) // only restarts if a brand-new quiz begins
 
   const countdownPct = (timeLeft / QUESTION_TIME) * 100
   const countdownColor =
@@ -1480,6 +1486,7 @@ export default function App() {
       selectedAnswer={quiz.selectedAnswer}
       isCorrect={quiz.isCorrect}
       quip={quiz.quip}
+      startTime={quiz.startTime}
       onAnswer={handleAnswer}
       onNext={handleNext}
       onTimeout={handleTimeout}
