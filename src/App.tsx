@@ -1154,7 +1154,7 @@ const PaywallScreen: React.FC<{
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '28px',
         }}>
-          Pay <strong style={{ color: '#22c55e' }}>$1</strong> on Venmo to erase it and try again.{' '}
+          Pay <strong style={{ color: '#ef4444' }}>$1</strong> on Venmo to erase it and try again.{' '}
           <span style={{ color: 'var(--muted)' }}>No promises you'll do better.</span>
         </p>
 
@@ -1196,7 +1196,7 @@ const PaywallScreen: React.FC<{
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>
                 Step 2 — Confirm below
               </div>
-              <button onClick={handlePay} className="primary-btn safe-btn">
+              <button onClick={handlePay} className="primary-btn">
                 I Paid — Let Me Try Again
               </button>
             </div>
