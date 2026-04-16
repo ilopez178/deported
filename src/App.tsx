@@ -1124,7 +1124,7 @@ const ResultScreen: React.FC<{
 
 // ── Leaderboard Screen ────────────────────────────────────────────────────────
 
-const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = ({ onBack, onPlay }) => {
+const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = ({ onBack, hasPlayed }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
 
   useEffect(() => {
@@ -1269,9 +1269,11 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
           </div>
         )}
 
-        <button onClick={onPlay} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
-          Take the Test →
-        </button>
+        {!hasPlayed && (
+          <button onClick={onBack} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
+            Take the Test →
+          </button>
+        )}
 
         <button onClick={onBack} style={{
           width: '100%', padding: '12px', background: 'transparent',
@@ -1408,7 +1410,7 @@ export default function App() {
 
   if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} hasPlayed={hasPlayed} onLeaderboard={goToLeaderboard} />
   if (screen === 'name') return <NameScreen onSubmit={launchQuiz} onBack={goToMenu} defaultName={playerName} />
-  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={goToMenu} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} hasPlayed={hasPlayed} />
   if (screen === 'result') return <ResultScreen score={finalScore} playerName={playerName} onLeaderboard={goToLeaderboard} />
 
   if (!quiz) return null
