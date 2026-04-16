@@ -10,6 +10,14 @@ import { supabase } from '@/lib/supabase'
 const QUIZ_LENGTH = 10
 const PASS_SCORE = 7 // 70% — actual USCIS passing threshold
 // Leaderboard is now stored in Supabase — see src/lib/supabase.ts
+const PLAYER_KEY = 'deported_player'
+
+const savePlayer = (name: string, deported: boolean) =>
+  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, deported }))
+
+const loadPlayer = (): { name: string; deported: boolean } | null => {
+  try { return JSON.parse(localStorage.getItem(PLAYER_KEY) ?? 'null') } catch { return null }
+}
 
 const CORRECT_QUIPS = [
   '🦅 Freedom secured!',
@@ -426,8 +434,8 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 
 // ── Name Screen ───────────────────────────────────────────────────────────────
 
-const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => void }> = ({ onSubmit, onBack }) => {
-  const [name, setName] = useState('')
+const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => void; defaultName?: string }> = ({ onSubmit, onBack, defaultName = '' }) => {
+  const [name, setName] = useState(defaultName)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -1149,8 +1157,17 @@ export default function App() {
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
   const [isPaidOverride, setIsPaidOverride] = useState(false)
-  // Once deported this session, "Begin Screening" gates to paywall until they pay
-  const [sessionDeported, setSessionDeported] = useState(false)
+  // Persisted across sessions via localStorage
+  const [sessionDeported, setSessionDeported] = useState(() => loadPlayer()?.deported ?? false)
+
+  // Restore name + deported status on load
+  useEffect(() => {
+    const player = loadPlayer()
+    if (player) {
+      setPlayerName(player.name)
+      setSessionDeported(player.deported)
+    }
+  }, [])
 
   const goToMenu = useCallback(() => setScreen('menu'), [])
   const goToLeaderboard = useCallback(() => setScreen('leaderboard'), [])
@@ -1183,7 +1200,8 @@ export default function App() {
 
   // "I paid" — skip name screen, reuse existing name, override their record
   const handlePaidRetry = useCallback(() => {
-    setSessionDeported(false) // paid their debt, gate lifts for this run
+    setSessionDeported(false)
+    savePlayer(playerName, false)
     launchQuiz(playerName, true)
   }, [playerName, launchQuiz])
 
@@ -1219,7 +1237,8 @@ export default function App() {
         date: Date.now(),
       }, isPaidOverride)
       setIsPaidOverride(false)
-      if (!tier.pass) setSessionDeported(true)
+      setSessionDeported(!tier.pass)
+      savePlayer(playerName, !tier.pass)
       setFinalScore(quiz.score)
       setScreen('result')
     } else {
@@ -1234,7 +1253,7 @@ export default function App() {
   }, [quiz, playerName, isPaidOverride])
 
   if (screen === 'menu') return <MenuScreen onStart={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
-  if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} />
+  if (screen === 'name') return <NameScreen onSubmit={startQuiz} onBack={goToMenu} defaultName={playerName} />
   if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} onPlay={() => sessionDeported ? setScreen('paywall') : setScreen('name')} />
   if (screen === 'paywall') return (
     <PaywallScreen
