@@ -706,9 +706,10 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
 const ResultScreen: React.FC<{
   score: number
   playerName: string
+  wasDeportedRetry: boolean
   onRestart: () => void
   onLeaderboard: () => void
-}> = ({ score, playerName, onRestart, onLeaderboard }) => {
+}> = ({ score, playerName, wasDeportedRetry, onRestart, onLeaderboard }) => {
   const tier = getTier(score)
   const pct = Math.round((score / QUIZ_LENGTH) * 100)
   const wrongCount = QUIZ_LENGTH - score
@@ -776,6 +777,43 @@ const ResultScreen: React.FC<{
           <p style={{ color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65, marginBottom: '24px' }}>
             {tier.sub}
           </p>
+
+          {/* Redemption banner for paid retries */}
+          {wasDeportedRetry && tier.pass && (
+            <div className="pop-in" style={{
+              background: 'linear-gradient(135deg, #052e16 0%, #0a3d1f 100%)',
+              border: '2px solid #16a34a',
+              borderRadius: '14px', padding: '18px 20px',
+              textAlign: 'center', marginBottom: '20px',
+            }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>🎉</div>
+              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#4ade80', marginBottom: '4px' }}>
+                You're Off the Shame Wall!
+              </div>
+              <div style={{ fontSize: '0.825rem', color: '#86efac', lineHeight: 1.5 }}>
+                Your deportation record has been wiped. You paid your debt to society
+                and proved you belong here. Welcome back, citizen.
+              </div>
+            </div>
+          )}
+
+          {wasDeportedRetry && !tier.pass && (
+            <div className="pop-in" style={{
+              background: 'linear-gradient(135deg, #1f0808 0%, #3a0d0d 100%)',
+              border: '2px solid #dc2626',
+              borderRadius: '14px', padding: '18px 20px',
+              textAlign: 'center', marginBottom: '20px',
+            }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>✈️</div>
+              <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f87171', marginBottom: '4px' }}>
+                Still Deported. Again.
+              </div>
+              <div style={{ fontSize: '0.825rem', color: '#fca5a5', lineHeight: 1.5 }}>
+                You paid $1, took the test again, and still got deported.
+                Your shame record has been updated. No refunds.
+              </div>
+            </div>
+          )}
 
           {/* Score card */}
           <div style={{
@@ -1058,15 +1096,14 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; onPlay: () => void }> = 
 const PaywallScreen: React.FC<{
   playerName: string
   score: number
-  onPay: () => void   // "Pay $1" — for now free, structure ready for real payment
+  onPay: () => void
   onDecline: () => void
 }> = ({ playerName, score, onPay, onDecline }) => {
   const [clicked, setClicked] = useState(false)
 
   const handlePay = () => {
     setClicked(true)
-    // TODO: Replace setTimeout with real payment gate (Stripe, Venmo, etc.)
-    setTimeout(() => onPay(), 1800)
+    setTimeout(() => onPay(), 1600)
   }
 
   return (
@@ -1089,7 +1126,7 @@ const PaywallScreen: React.FC<{
 
         <h2 style={{
           fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900,
-          color: 'var(--white)', marginBottom: '10px', lineHeight: 1.15,
+          color: 'var(--white)', marginBottom: '12px', lineHeight: 1.15,
         }}>
           Your name is on<br />
           <span style={{ color: '#ef4444' }}>The Shame Wall.</span>
@@ -1097,35 +1134,67 @@ const PaywallScreen: React.FC<{
 
         <p style={{
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65,
-          marginBottom: '8px',
+          marginBottom: '24px',
         }}>
-          <strong style={{ color: 'var(--white)' }}>{playerName}</strong> — you scored{' '}
+          <strong style={{ color: 'var(--white)' }}>{playerName}</strong>, you scored{' '}
           <strong style={{ color: '#ef4444' }}>{score}/10</strong> and got deported.
-          That record is now public, permanent, and very embarrassing.
+          That record is now public, permanent, and very embarrassing.{' '}
+          The only way to clear your name is to retake the test and pass.
         </p>
-
-        <p style={{ color: 'var(--muted)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '28px' }}>
-          The <em>only</em> way to override your entry on the leaderboard
-          is to retake the test. That'll cost you{' '}
-          <strong style={{ color: '#f59e0b' }}>$1</strong>.
-        </p>
-
-        {/* Fake Venmo badge */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '8px',
-          background: '#008CFF15', border: '1px solid #008CFF44',
-          borderRadius: '10px', padding: '10px 18px', marginBottom: '24px',
-          fontSize: '0.8rem', color: '#60afff', fontWeight: 600,
-        }}>
-          <span style={{ fontSize: '1rem' }}>💸</span>
-          Venmo <strong>@irvinglopez</strong> — "$1 deportation override"
-        </div>
 
         {!clicked ? (
           <>
-            <button onClick={handlePay} className="primary-btn safe-btn" style={{ marginBottom: '10px' }}>
-              💸 I Paid — Let Me Try Again
-            </button>
+            {/* Step 1 */}
+            <div style={{ textAlign: 'left', marginBottom: '8px' }}>
+              <div style={{
+                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+                color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '8px',
+              }}>
+                Step 1 — Send <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo
+              </div>
+              <a
+                href="https://venmo.com/u/irvinglopez"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '14px',
+                  background: 'var(--surface)', border: '1px solid #3b82f6',
+                  borderRadius: '12px', padding: '14px 16px',
+                  textDecoration: 'none', cursor: 'pointer',
+                }}
+              >
+                <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>💸</span>
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <div style={{ color: 'var(--white)', fontWeight: 800, fontSize: '1rem' }}>
+                    @irvinglopez
+                  </div>
+                  <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '3px' }}>
+                    Note: <span style={{ color: '#93c5fd', fontWeight: 600 }}>"$1 deportation override"</span>
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '0.75rem', fontWeight: 700, color: '#3b82f6',
+                  flexShrink: 0, border: '1px solid #3b82f633',
+                  borderRadius: '6px', padding: '4px 8px',
+                }}>
+                  Open →
+                </span>
+              </a>
+            </div>
+
+            {/* Step 2 */}
+            <div style={{ textAlign: 'left', marginBottom: '20px', marginTop: '20px' }}>
+              <div style={{
+                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em',
+                color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '8px',
+              }}>
+                Step 2 — Come back and tap below
+              </div>
+              <button onClick={handlePay} className="primary-btn safe-btn">
+                I Paid — Let Me Try Again
+              </button>
+            </div>
+
             <button onClick={onDecline} style={{
               display: 'block', width: '100%', padding: '13px',
               background: 'transparent', border: '1px solid #16a34a55',
@@ -1142,9 +1211,9 @@ const PaywallScreen: React.FC<{
             borderRadius: '12px',
             color: '#4ade80', fontSize: '1rem', fontWeight: 700,
           }}>
-            💸 Payment received. Clearing your record...<br />
+            Verifying payment... clearing your record.<br />
             <span style={{ fontSize: '0.8rem', color: '#86efac', fontWeight: 400 }}>
-              (or at least pretending to)
+              Don't mess it up this time.
             </span>
           </div>
         )}
@@ -1178,6 +1247,7 @@ export default function App() {
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
   const [isPaidOverride, setIsPaidOverride] = useState(false)
+  const [wasDeportedRetry, setWasDeportedRetry] = useState(false)
   // Persisted across sessions via localStorage
   const [sessionDeported, setSessionDeported] = useState(() => loadPlayer()?.deported ?? false)
 
@@ -1212,26 +1282,28 @@ export default function App() {
     setScreen('quiz')
   }, [])
 
-  // Free retry for winners; paywall for the deported
-  const handleRetry = useCallback(() => {
-    const passed = getTier(finalScore).pass
-    if (passed) {
-      setScreen('name')
-    } else {
-      setScreen('paywall')
-    }
-  }, [finalScore])
-
   // "I paid" — skip name screen, reuse existing name, override their record
   const handlePaidRetry = useCallback(() => {
     setSessionDeported(false)
+    setWasDeportedRetry(true)
     savePlayer(playerName, false)
     launchQuiz(playerName, true)
   }, [playerName, launchQuiz])
 
   const startQuiz = useCallback((name: string) => {
+    setWasDeportedRetry(false)
     launchQuiz(name, false)
   }, [launchQuiz])
+
+  const handleRetry = useCallback(() => {
+    const passed = getTier(finalScore).pass
+    if (passed) {
+      setWasDeportedRetry(false)
+      setScreen('name')
+    } else {
+      setScreen('paywall')
+    }
+  }, [finalScore])
 
   const handleAnswer = useCallback((answer: string) => {
     setQuiz(prev => {
@@ -1293,6 +1365,7 @@ export default function App() {
       <ResultScreen
         score={finalScore}
         playerName={playerName}
+        wasDeportedRetry={wasDeportedRetry}
         onRestart={handleRetry}
         onLeaderboard={goToLeaderboard}
       />
