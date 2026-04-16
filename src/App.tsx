@@ -1154,7 +1154,7 @@ const PaywallScreen: React.FC<{
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '28px',
         }}>
-          Pay <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo to erase it and try again.{' '}
+          Pay <strong style={{ color: '#16a34a' }}>$1</strong> on Venmo to erase it and try again.{' '}
           <span style={{ color: 'var(--muted)' }}>No promises you'll do better.</span>
         </p>
 
@@ -1162,7 +1162,7 @@ const PaywallScreen: React.FC<{
           <>
             {/* Step 1 */}
             <div style={{ textAlign: 'left', marginBottom: '8px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>
                 Step 1 — Send $1
               </div>
               <a
@@ -1193,7 +1193,7 @@ const PaywallScreen: React.FC<{
 
             {/* Step 2 */}
             <div style={{ textAlign: 'left', marginBottom: '16px', marginTop: '16px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--white)', marginBottom: '8px' }}>
                 Step 2 — Confirm below
               </div>
               <button onClick={handlePay} className="primary-btn safe-btn">
