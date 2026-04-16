@@ -1142,7 +1142,9 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
 
   return (
     <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
-      <div style={{ ...card, maxWidth: '600px' }} className="slide-in">
+      <div style={{ ...card, maxWidth: '600px', position: 'relative' }} className="slide-in">
+
+        <ShareButton />
 
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🏆</div>
@@ -1277,8 +1279,8 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
 
         <button onClick={onBack} style={{
           width: '100%', padding: '12px', background: 'transparent',
-          border: '1px solid var(--border)', borderRadius: '12px',
-          color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
+          border: '1px solid #ef444455', borderRadius: '12px',
+          color: '#ef4444', fontSize: '0.875rem', fontWeight: 600,
           fontFamily: 'inherit', cursor: 'pointer',
         }}>
           ← Back to Home
