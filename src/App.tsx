@@ -107,10 +107,11 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
       .select('*')
       .order('score', { ascending: false })
     if (error) throw error
-    return (data ?? []).map(row => ({
+    type DBRow = { name: string; score: number; time_seconds: number | null; passed: boolean; date: number }
+    return (data ?? []).map((row: DBRow) => ({
       name: row.name,
       score: row.score,
-      timeSeconds: row.time_seconds,
+      timeSeconds: row.time_seconds ?? 0,
       passed: row.passed,
       date: row.date,
     }))
