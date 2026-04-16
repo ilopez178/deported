@@ -1135,31 +1135,28 @@ const PaywallScreen: React.FC<{
     <div style={page}>
       <div style={{ ...card, maxWidth: '500px', textAlign: 'center' }} className="slide-in">
 
-        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⛓️</div>
+        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💸</div>
 
         <h2 style={{
-          fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 900,
-          color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
+          fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', fontWeight: 900,
+          color: 'var(--white)', marginBottom: '6px', lineHeight: 1.1,
         }}>
-          Want to try again?
+          Your record stands.
         </h2>
 
         <p style={{
-          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
-          marginBottom: '24px',
+          color: 'var(--muted)', fontSize: '1rem', lineHeight: 1.5,
+          marginBottom: '28px',
         }}>
-          It'll cost you <strong style={{ color: '#f59e0b', fontSize: '1.1rem' }}>$1.</strong>
+          Pay <strong style={{ color: '#f59e0b' }}>$1</strong> on Venmo to erase it and try again.
         </p>
 
         {!clicked ? (
           <>
             {/* Step 1 */}
             <div style={{ textAlign: 'left', marginBottom: '8px' }}>
-              <div style={{
-                fontSize: '0.85rem', fontWeight: 700,
-                color: 'var(--accent)', marginBottom: '8px',
-              }}>
-                Step 1 — Send <strong>${'1'}</strong> on Venmo
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px' }}>
+                Step 1 — Send $1
               </div>
               <a
                 href="https://venmo.com/u/irvinglopez"
@@ -1168,23 +1165,19 @@ const PaywallScreen: React.FC<{
                 style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
                   background: 'var(--surface)', border: '1px solid var(--accent)',
-                  borderRadius: '12px', padding: '14px 16px',
+                  borderRadius: '12px', padding: '16px',
                   textDecoration: 'none', cursor: 'pointer',
                 }}
               >
-                <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>💸</span>
+                <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>💸</span>
                 <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ color: 'var(--white)', fontWeight: 800, fontSize: '1rem' }}>
-                    @irvinglopez
-                  </div>
-                  <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '3px' }}>
-                    Note: <span style={{ color: '#93c5fd', fontWeight: 600 }}>"$1 deportation override"</span>
-                  </div>
+                  <div style={{ color: 'var(--white)', fontWeight: 800, fontSize: '1.1rem' }}>@irvinglopez</div>
+                  <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '2px' }}>Venmo</div>
                 </div>
                 <span style={{
-                  fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)',
-                  flexShrink: 0, border: '1px solid #0ea5e933',
-                  borderRadius: '6px', padding: '4px 8px',
+                  fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)',
+                  flexShrink: 0, background: '#0ea5e915',
+                  borderRadius: '8px', padding: '6px 12px',
                 }}>
                   Open →
                 </span>
@@ -1192,12 +1185,9 @@ const PaywallScreen: React.FC<{
             </div>
 
             {/* Step 2 */}
-            <div style={{ textAlign: 'left', marginBottom: '20px', marginTop: '20px' }}>
-              <div style={{
-                fontSize: '0.85rem', fontWeight: 700,
-                color: 'var(--accent)', marginBottom: '8px',
-              }}>
-                Step 2 — Come back and tap below
+            <div style={{ textAlign: 'left', marginBottom: '16px', marginTop: '16px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px' }}>
+                Step 2 — Confirm below
               </div>
               <button onClick={handlePay} className="primary-btn safe-btn">
                 I Paid — Let Me Try Again
@@ -1212,24 +1202,22 @@ const PaywallScreen: React.FC<{
             }}>
               ✈️ Accept My Deportation
             </button>
+
+            <p style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '16px' }}>
+              No refunds if you get deported again.
+            </p>
           </>
         ) : (
           <div className="fade-up" style={{
-            padding: '20px',
-            background: '#0a2515', border: '1px solid #16a34a',
-            borderRadius: '12px',
-            color: '#4ade80', fontSize: '1rem', fontWeight: 700,
+            padding: '20px', background: '#0a2515', border: '1px solid #16a34a',
+            borderRadius: '12px', color: '#4ade80', fontSize: '1rem', fontWeight: 700,
           }}>
-            Verifying payment... clearing your record.<br />
+            Clearing your record...<br />
             <span style={{ fontSize: '0.8rem', color: '#86efac', fontWeight: 400 }}>
-              Don't mess it up this time.
+              Don't blow it this time.
             </span>
           </div>
         )}
-
-        <p style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.5 }}>
-          No refunds if you get deported again.
-        </p>
       </div>
     </div>
   )
