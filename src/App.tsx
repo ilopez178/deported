@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { QUESTIONS } from '@/data/questions'
 import { shuffleArray } from '@utils/helpers'
 import type { Question } from '@types'
@@ -457,6 +457,7 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 
 const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => void; defaultName?: string }> = ({ onSubmit, onBack, defaultName = '' }) => {
   const [name, setName] = useState(defaultName)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -464,9 +465,17 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
     if (trimmed) onSubmit(trimmed)
   }
 
+  // When the keyboard opens on mobile it shrinks the viewport — scroll the
+  // input into view so it's not hidden behind the keyboard.
+  const handleFocus = () => {
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 320)
+  }
+
   return (
-    <div style={page}>
-      <div style={{ ...card, maxWidth: '480px', textAlign: 'center' }} className="slide-in">
+    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '32px', paddingBottom: '32px' }}>
+      <div style={{ ...card, maxWidth: '480px', textAlign: 'center', width: '100%' }} className="slide-in">
 
         <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>🪪</div>
 
@@ -487,7 +496,7 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
 
         <p style={{
           color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
-          marginBottom: '32px',
+          marginBottom: '28px',
         }}>
           Your full name will be logged in the federal screening database.<br />
           <span style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>(And the leaderboard.)</span>
@@ -495,15 +504,19 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
 
         <form onSubmit={handleSubmit}>
           <input
+            ref={inputRef}
             type="text"
+            inputMode="text"
+            autoComplete="name"
             value={name}
             onChange={e => setName(e.target.value)}
+            onFocus={handleFocus}
             placeholder="First and last name"
             maxLength={50}
             autoFocus
             style={{
               display: 'block', width: '100%',
-              padding: '14px 18px', marginBottom: '12px',
+              padding: '16px 18px', marginBottom: '12px',
               background: 'var(--surface)',
               border: `1px solid ${name.trim() ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: '12px',
