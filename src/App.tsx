@@ -1123,7 +1123,7 @@ const PaywallScreen: React.FC<{
   score: number
   onPay: () => void
   onDecline: () => void
-}> = ({ playerName, score, onPay, onDecline }) => {
+}> = ({ onPay, onDecline }) => {
   const [clicked, setClicked] = useState(false)
 
   const handlePay = () => {
@@ -1135,38 +1135,20 @@ const PaywallScreen: React.FC<{
     <div style={page}>
       <div style={{ ...card, maxWidth: '500px', textAlign: 'center' }} className="slide-in">
 
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⛓️</div>
-
-        <div style={{
-          display: 'inline-block',
-          border: '2px solid #ef4444',
-          borderRadius: '6px',
-          padding: '3px 12px',
-          fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em',
-          color: '#ef4444', textTransform: 'uppercase',
-          marginBottom: '20px',
-        }} className="stamp-in">
-          Federal Record Locked
-        </div>
+        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>⛓️</div>
 
         <h2 style={{
-          fontSize: 'clamp(1.4rem, 4vw, 1.8rem)', fontWeight: 900,
-          color: 'var(--white)', marginBottom: '12px', lineHeight: 1.15,
+          fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontWeight: 900,
+          color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
         }}>
-          Your name is on<br />
-          <span style={{ color: '#ef4444' }}>The Shame Wall.</span>
+          Want to try again?
         </h2>
 
         <p style={{
-          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.65,
+          color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.6,
           marginBottom: '24px',
         }}>
-          <strong style={{ color: 'var(--white)' }}>{playerName}</strong>, you scored{' '}
-          <strong style={{ color: '#ef4444' }}>{score}/10</strong> and got deported.
-          Your record is <strong style={{ color: 'var(--white)' }}>public</strong>,{' '}
-          <strong style={{ color: 'var(--white)' }}>permanent</strong>, and{' '}
-          <strong style={{ color: 'var(--white)' }}>very embarrassing</strong>.
-          Pay $1 to retake and clear your name.
+          It'll cost you <strong style={{ color: '#f59e0b', fontSize: '1.1rem' }}>$1.</strong>
         </p>
 
         {!clicked ? (
