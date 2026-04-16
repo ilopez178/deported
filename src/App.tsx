@@ -128,6 +128,14 @@ const loadLeaderboard = async (): Promise<LeaderboardEntry[]> => {
   }
 }
 
+const logPlay = async (score: number, passed: boolean): Promise<void> => {
+  try {
+    await supabase.from('plays').insert({ score, passed })
+  } catch (e) {
+    console.error('Failed to log play:', e)
+  }
+}
+
 const saveToLeaderboard = async (entry: LeaderboardEntry): Promise<void> => {
   try {
     // Always replace — each player has exactly one entry (their most recent result).
@@ -406,7 +414,18 @@ const InlineLeaderboard: React.FC = () => {
 
 // ── Menu Screen ───────────────────────────────────────────────────────────────
 
-const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
+const usePlayCount = () => {
+  const [count, setCount] = useState<number | null>(null)
+  useEffect(() => {
+    supabase.from('plays').select('*', { count: 'exact', head: true })
+      .then(({ count: c }) => { if (c != null) setCount(c) })
+  }, [])
+  return count
+}
+
+const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
+  const playCount = usePlayCount()
+  return (
   <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
     <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="slide-in">
 
@@ -446,7 +465,13 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
         Begin Screening →
       </button>
 
-      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.5 }}>
+      {playCount != null && playCount > 0 && (
+        <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '14px', fontWeight: 600 }}>
+          <span style={{ color: 'var(--white)' }}>{playCount.toLocaleString()}</span> people have been screened
+        </p>
+      )}
+
+      <p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: playCount ? '6px' : '20px', lineHeight: 1.5 }}>
         Based on actual citizenship test questions.<br />
         No lawyers were harmed in the making of this quiz.
       </p>
@@ -454,7 +479,8 @@ const MenuScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
       <InlineLeaderboard />
     </div>
   </div>
-)
+  )
+}
 
 // ── Name Screen ───────────────────────────────────────────────────────────────
 
@@ -557,6 +583,8 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
 
 // ── Quiz Screen ───────────────────────────────────────────────────────────────
 
+const QUESTION_TIME = 90 // seconds per question
+
 interface QuizScreenProps {
   question: Question
   questionNumber: number
@@ -566,25 +594,37 @@ interface QuizScreenProps {
   selectedAnswer: string | null
   isCorrect: boolean | null
   quip: string
-  startTime: number
   onAnswer: (a: string) => void
   onNext: () => void
+  onTimeout: () => void
 }
 
 const QuizScreen: React.FC<QuizScreenProps> = ({
   question, questionNumber, total, score, wrongCount,
-  selectedAnswer, isCorrect, quip, startTime, onAnswer, onNext,
+  selectedAnswer, isCorrect, quip, onAnswer, onNext, onTimeout,
 }) => {
   const answered = selectedAnswer !== null
   const progressPct = ((questionNumber - 1) / total) * 100
 
-  const [elapsed, setElapsed] = useState(0)
+  // Per-question countdown
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME)
+  useEffect(() => { setTimeLeft(QUESTION_TIME) }, [questionNumber])
   useEffect(() => {
+    if (answered) return
     const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime) / 1000))
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(id); onTimeout(); return 0 }
+        return prev - 1
+      })
     }, 1000)
     return () => clearInterval(id)
-  }, [startTime])
+  }, [questionNumber, answered, onTimeout])
+
+  const countdownPct = (timeLeft / QUESTION_TIME) * 100
+  const countdownColor =
+    timeLeft <= 10 ? '#ef4444' :
+    timeLeft <= 20 ? '#f59e0b' :
+    '#22c55e'
 
   return (
     <div style={page}>
@@ -619,6 +659,45 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
 
         <DeportationMeter wrongCount={wrongCount} />
 
+        {/* Per-question countdown */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+            {/* Big countdown number */}
+            <span style={{
+              fontSize: '2rem', fontWeight: 900, lineHeight: 1,
+              color: countdownColor,
+              fontVariantNumeric: 'tabular-nums',
+              minWidth: '3ch',
+              transition: 'color 0.3s ease',
+              animation: timeLeft <= 10 && !answered ? 'dangerPulse 0.7s ease-in-out infinite' : 'none',
+            }}>
+              {timeLeft}
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted)',
+                textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '5px',
+              }}>
+                seconds remaining
+              </div>
+              {/* Draining bar */}
+              <div style={{
+                height: '8px', background: 'var(--surface)', borderRadius: '99px',
+                overflow: 'hidden', border: '1px solid var(--border)',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${countdownPct}%`,
+                  background: countdownColor,
+                  borderRadius: '99px',
+                  transition: 'width 0.25s linear, background 0.3s ease',
+                  boxShadow: timeLeft <= 10 ? `0 0 10px ${countdownColor}99` : 'none',
+                }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '8px',
@@ -629,19 +708,9 @@ const QuizScreen: React.FC<QuizScreenProps> = ({
           }}>
             Interrogation {questionNumber} of {total}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <span style={{
-              fontSize: '0.78rem', fontWeight: 700,
-              color: elapsed >= 120 ? '#f87171' : elapsed >= 60 ? '#fbbf24' : 'var(--accent)',
-              fontVariantNumeric: 'tabular-nums',
-              transition: 'color 0.5s ease',
-            }}>
-              ⏱ {formatTime(elapsed)}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 700 }}>
-              ✓ {score}
-            </span>
-          </div>
+          <span style={{ fontSize: '0.8rem', color: '#22c55e', fontWeight: 700 }}>
+            ✓ {score}
+          </span>
         </div>
 
         <div style={{ height: '4px', background: 'var(--surface)', borderRadius: '99px', overflow: 'hidden', marginBottom: '32px', border: '1px solid var(--border)' }}>
@@ -1322,18 +1391,42 @@ export default function App() {
     })
   }, [])
 
-  const handleNext = useCallback(async () => {
+  const handleTimeout = useCallback(async () => {
     if (!quiz) return
-    if (quiz.currentIndex + 1 >= QUIZ_LENGTH) {
-      const tier = getTier(quiz.score)
-      const timeSeconds = Math.round((Date.now() - quiz.startTime) / 1000)
-      await saveToLeaderboard({
+    // Time's up — end quiz immediately with current score
+    const tier = getTier(quiz.score)
+    const timeSeconds = Math.round((Date.now() - quiz.startTime) / 1000)
+    await Promise.all([
+      saveToLeaderboard({
         name: playerName,
         score: quiz.score,
         timeSeconds,
         passed: tier.pass,
         date: Date.now(),
-      })
+      }),
+      logPlay(quiz.score, tier.pass),
+    ])
+    setSessionDeported(!tier.pass)
+    savePlayer(playerName, !tier.pass)
+    setFinalScore(quiz.score)
+    setScreen('result')
+  }, [quiz, playerName])
+
+  const handleNext = useCallback(async () => {
+    if (!quiz) return
+    if (quiz.currentIndex + 1 >= QUIZ_LENGTH) {
+      const tier = getTier(quiz.score)
+      const timeSeconds = Math.round((Date.now() - quiz.startTime) / 1000)
+      await Promise.all([
+        saveToLeaderboard({
+          name: playerName,
+          score: quiz.score,
+          timeSeconds,
+          passed: tier.pass,
+          date: Date.now(),
+        }),
+        logPlay(quiz.score, tier.pass),
+      ])
       setSessionDeported(!tier.pass)
       savePlayer(playerName, !tier.pass)
       setFinalScore(quiz.score)
@@ -1387,9 +1480,9 @@ export default function App() {
       selectedAnswer={quiz.selectedAnswer}
       isCorrect={quiz.isCorrect}
       quip={quiz.quip}
-      startTime={quiz.startTime}
       onAnswer={handleAnswer}
       onNext={handleNext}
+      onTimeout={handleTimeout}
     />
   )
 }
