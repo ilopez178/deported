@@ -542,11 +542,11 @@ const ShareButton: React.FC = () => {
         onClick={() => setOpen(true)}
         title="Send to a Friend"
         style={{
-          position: 'absolute', top: '16px', right: '16px',
+          position: 'absolute', top: '12px', right: '12px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '36px', height: '36px',
+          width: '44px', height: '44px',
           background: '#ef4444', border: 'none', borderRadius: '10px',
-          cursor: 'pointer', flexShrink: 0,
+          cursor: 'pointer', flexShrink: 0, zIndex: 10,
         }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
