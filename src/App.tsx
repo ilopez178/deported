@@ -374,7 +374,7 @@ const InlineLeaderboard: React.FC = () => {
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px',
             display: 'flex', alignItems: 'center', gap: '6px',
-          }}>🇺🇸 Stayed! <span style={{ color: 'var(--muted)' }}>({allStayed.length})</span></div>
+          }}>🇺🇸 Stayed! <span style={{ color: '#22c55e' }}>({allStayed.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {stayed.map((e, i) => (
               <div key={i} style={{
@@ -403,7 +403,7 @@ const InlineLeaderboard: React.FC = () => {
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px',
             display: 'flex', alignItems: 'center', gap: '6px',
-          }}>✈️ Deported! <span style={{ color: 'var(--muted)' }}>({allDeported.length})</span></div>
+          }}>✈️ Deported! <span style={{ color: '#ef4444' }}>({allDeported.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {deported.map((e, i) => (
               <div key={i} style={{
