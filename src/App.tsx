@@ -314,14 +314,15 @@ const InlineLeaderboard: React.FC = () => {
     loadLeaderboard().then(data => { setEntries(data); setLoading(false) })
   }, [])
 
-  const stayed = entries
+  const allStayed = entries
     .filter(e => e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
-    .slice(0, 10)
+  const stayed = allStayed.slice(0, 3)
 
-  const deported = entries
+  const allDeported = entries
     .filter(e => !e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
+  const deported = allDeported.slice(0, 5)
 
   const LbSection = () => (
     <div style={{
@@ -373,7 +374,7 @@ const InlineLeaderboard: React.FC = () => {
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px',
             display: 'flex', alignItems: 'center', gap: '6px',
-          }}>🇺🇸 Stayed! <span style={{ color: 'var(--muted)' }}>({stayed.length})</span></div>
+          }}>🇺🇸 Stayed! <span style={{ color: 'var(--muted)' }}>({allStayed.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {stayed.map((e, i) => (
               <div key={i} style={{
@@ -402,7 +403,7 @@ const InlineLeaderboard: React.FC = () => {
             fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
             textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px',
             display: 'flex', alignItems: 'center', gap: '6px',
-          }}>✈️ Deported! <span style={{ color: 'var(--muted)' }}>({deported.length})</span></div>
+          }}>✈️ Deported! <span style={{ color: 'var(--muted)' }}>({allDeported.length})</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {deported.map((e, i) => (
               <div key={i} style={{
