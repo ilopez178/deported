@@ -451,8 +451,8 @@ const ShareModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,0,0,0.7)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        padding: '0 16px 32px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px 16px',
         backdropFilter: 'blur(4px)',
       }}
     >
