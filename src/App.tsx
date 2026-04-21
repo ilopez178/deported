@@ -608,13 +608,9 @@ const ScreenedCard: React.FC<{
   playerName: string
   passed: boolean
   score: number
-  lastPlayed: number
   onRetake: () => void
-}> = ({ playerName, passed, score, lastPlayed, onRetake }) => {
+}> = ({ playerName, passed, score, onRetake }) => {
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null)
-  const [cooldownMs, setCooldownMs] = useState(() =>
-    Math.max(0, RETAKE_COOLDOWN_MS - (Date.now() - lastPlayed))
-  )
 
   useEffect(() => {
     loadLeaderboard().then(entries => {
@@ -625,20 +621,6 @@ const ScreenedCard: React.FC<{
       if (idx !== -1) setRank({ position: idx + 1, total: list.length })
     })
   }, [playerName, passed])
-
-  useEffect(() => {
-    if (cooldownMs <= 0) return
-    const id = setInterval(() => {
-      const remaining = Math.max(0, RETAKE_COOLDOWN_MS - (Date.now() - lastPlayed))
-      setCooldownMs(remaining)
-      if (remaining <= 0) clearInterval(id)
-    }, 1000)
-    return () => clearInterval(id)
-  }, [lastPlayed])
-
-  const canRetake = cooldownMs <= 0
-  const cooldownMins = Math.floor(cooldownMs / 60000)
-  const cooldownSecs = Math.floor((cooldownMs % 60000) / 1000)
 
   const tier = getTier(score)
 
@@ -698,24 +680,9 @@ const ScreenedCard: React.FC<{
         )}
       </div>
 
-      {/* Retake or cooldown */}
-      {canRetake ? (
-        <button onClick={onRetake} className="primary-btn" style={{ marginBottom: '10px' }}>
-          Retake the Test →
-        </button>
-      ) : (
-        <div style={{
-          padding: '12px 16px', marginBottom: '10px',
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: '12px', textAlign: 'center',
-          fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 600,
-        }}>
-          Retake available in{' '}
-          <span style={{ color: 'var(--white)', fontVariantNumeric: 'tabular-nums' }}>
-            {cooldownMins}:{cooldownSecs.toString().padStart(2, '0')}
-          </span>
-        </div>
-      )}
+      <button onClick={onRetake} className="primary-btn" style={{ marginBottom: '10px' }}>
+        Retake the Test →
+      </button>
 
     </div>
   )
@@ -748,7 +715,6 @@ const MenuScreen: React.FC<{
               playerName={playerName}
               passed={playerResult.passed}
               score={playerResult.score}
-              lastPlayed={lastPlayed}
               onRetake={onStart}
             />
             <button onClick={() => setShowLbModal(true)} style={{
@@ -1320,6 +1286,7 @@ const ResultScreen: React.FC<{
 
 const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = ({ onBack, hasPlayed }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [shareOpen, setShareOpen] = useState(false)
   const stayedRef = useRef<HTMLDivElement>(null)
   const deportedRef = useRef<HTMLDivElement>(null)
 
@@ -1340,7 +1307,24 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
     <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
       <div style={{ ...card, maxWidth: '600px', position: 'relative' }} className="slide-in">
 
-        <ShareButton />
+        {/* Share button — modal rendered at page level so fixed positioning isn't clipped */}
+        <button
+          onClick={() => setShareOpen(true)}
+          title="Send to a Friend"
+          style={{
+            position: 'absolute', top: '12px', right: '12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '44px', height: '44px',
+            background: '#ef4444', border: 'none', borderRadius: '10px',
+            cursor: 'pointer', zIndex: 10,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
+          </svg>
+        </button>
 
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🏆</div>
@@ -1513,8 +1497,21 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
           </button>
         )}
 
+        {/* Spacer so content doesn't hide behind sticky button */}
+        <div style={{ height: '72px' }} />
+      </div>
+
+      {/* Sticky Back to Home — always visible at bottom */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        padding: '12px 24px 28px',
+        background: 'linear-gradient(to bottom, transparent, var(--bg) 40%)',
+        display: 'flex', justifyContent: 'center',
+        zIndex: 50,
+      }}>
         <button onClick={onBack} style={{
-          width: '100%', padding: '12px', background: 'transparent',
+          width: '100%', maxWidth: '600px', padding: '13px',
+          background: 'var(--card)',
           border: '1px solid #ef444455', borderRadius: '12px',
           color: '#ef4444', fontSize: '0.875rem', fontWeight: 600,
           fontFamily: 'inherit', cursor: 'pointer',
@@ -1522,6 +1519,9 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
           ← Back to Home
         </button>
       </div>
+
+      {/* Share modal at page level — avoids fixed-inside-relative clipping */}
+      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
     </div>
   )
 }
