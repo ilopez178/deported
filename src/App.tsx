@@ -697,7 +697,7 @@ const MenuScreen: React.FC<{
   const [showLbModal, setShowLbModal] = useState(false)
 
   return (
-    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
+    <div style={{ ...page, padding: '40px 24px' }}>
       <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
         <ShareButton />
@@ -814,7 +814,7 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
   }
 
   return (
-    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '32px', paddingBottom: '32px' }}>
+    <div style={{ ...page, padding: '40px 24px' }}>
       <div style={{ ...card, maxWidth: '480px', textAlign: 'center', width: '100%' }} className="slide-in">
 
         <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>🪪</div>
@@ -894,7 +894,7 @@ const NameScreen: React.FC<{ onSubmit: (name: string) => void; onBack: () => voi
 
 // ── Quiz Screen ───────────────────────────────────────────────────────────────
 
-const QUESTION_TIME = 120 // seconds for the entire quiz
+const QUESTION_TIME = 100 // seconds for the entire quiz
 
 interface QuizScreenProps {
   question: Question
@@ -1131,7 +1131,7 @@ const ResultScreen: React.FC<{
   return (
     <>
       {tier.pass && <Confetti />}
-      <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
+      <div style={{ ...page, padding: '40px 24px' }}>
         <div style={{ ...card, maxWidth: '520px', textAlign: 'center' }} className="fade-up">
 
           <div style={{
@@ -1304,7 +1304,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
 
   return (
-    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
+    <div style={{ ...page, padding: '40px 24px' }}>
       <div style={{ ...card, maxWidth: '600px', position: 'relative' }} className="slide-in">
 
         {/* Share button — modal rendered at page level so fixed positioning isn't clipped */}
