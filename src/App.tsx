@@ -311,6 +311,8 @@ const card: React.CSSProperties = {
 const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const stayedRef = useRef<HTMLDivElement>(null)
+  const deportedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadLeaderboard().then(data => { setEntries(data); setLoading(false) })
@@ -348,10 +350,10 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
           {/* Stats row */}
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-            <div style={{
+            <div onClick={() => stayedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{
               flex: 1, padding: '12px 8px',
               background: '#052e16', border: '1px solid #16a34a44',
-              borderRadius: '12px',
+              borderRadius: '12px', cursor: 'pointer',
             }}>
               <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#4ade80', lineHeight: 1 }}>
                 {entries.filter(e => e.passed).length}
@@ -360,10 +362,10 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 🇺🇸 Stayed
               </div>
             </div>
-            <div style={{
+            <div onClick={() => deportedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{
               flex: 1, padding: '12px 8px',
               background: '#1f0808', border: '1px solid #ef444444',
-              borderRadius: '12px',
+              borderRadius: '12px', cursor: 'pointer',
             }}>
               <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f87171', lineHeight: 1 }}>
                 {entries.filter(e => !e.passed).length}
@@ -401,7 +403,7 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <>
               {stayed.length > 0 && (
                 <div style={{ marginBottom: '20px' }}>
-                  <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div ref={stayedRef} style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     🇺🇸 Stayed! <span style={{ color: '#22c55e' }}>({stayed.length})</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -427,7 +429,7 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               )}
               {deported.length > 0 && (
                 <div>
-                  <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div ref={deportedRef} style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     ✈️ Deported! <span style={{ color: '#ef4444' }}>({deported.length})</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1332,6 +1334,8 @@ const ResultScreen: React.FC<{
 
 const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = ({ onBack, hasPlayed }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const stayedRef = useRef<HTMLDivElement>(null)
+  const deportedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadLeaderboard().then(setEntries)
@@ -1352,7 +1356,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
 
         <ShareButton />
 
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🏆</div>
           <h1 style={{
             fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 900,
@@ -1360,14 +1364,54 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
           }}>
             Screening Results
           </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '6px' }}>
+          <p style={{ color: 'var(--muted)', fontSize: '0.875rem', marginTop: '6px', marginBottom: '20px' }}>
             The official federal record of who stays and who goes
           </p>
+
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <div onClick={() => stayedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{
+              flex: 1, padding: '12px 8px',
+              background: '#052e16', border: '1px solid #16a34a44',
+              borderRadius: '12px', cursor: 'pointer',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#4ade80', lineHeight: 1 }}>
+                {entries.filter(e => e.passed).length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                🇺🇸 Stayed
+              </div>
+            </div>
+            <div onClick={() => deportedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} style={{
+              flex: 1, padding: '12px 8px',
+              background: '#1f0808', border: '1px solid #ef444444',
+              borderRadius: '12px', cursor: 'pointer',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f87171', lineHeight: 1 }}>
+                {entries.filter(e => !e.passed).length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                ✈️ Deported
+              </div>
+            </div>
+            <div style={{
+              flex: 1, padding: '12px 8px',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: '12px',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--white)', lineHeight: 1 }}>
+                {entries.length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                Total Screened
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Stayed section */}
         <div style={{ marginBottom: '28px' }}>
-          <div style={{
+          <div ref={stayedRef} style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             marginBottom: '12px',
           }}>
@@ -1430,7 +1474,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
         {/* Deported section */}
         {deported.length > 0 && (
           <div style={{ marginBottom: '28px' }}>
-            <div style={{
+            <div ref={deportedRef} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               marginBottom: '12px',
             }}>
