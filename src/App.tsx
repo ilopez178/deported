@@ -304,6 +304,32 @@ const card: React.CSSProperties = {
   width: '100%',
 }
 
+// ── Skeleton loader ───────────────────────────────────────────────────────────
+
+const skeletonBase: React.CSSProperties = {
+  background: 'linear-gradient(90deg, var(--surface) 25%, #1e1e1e 50%, var(--surface) 75%)',
+  backgroundSize: '800px 100%',
+  animation: 'shimmer 1.4s infinite linear',
+  borderRadius: '6px',
+}
+
+const SkeletonRows: React.FC<{ count?: number }> = ({ count = 5 }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '10px 14px',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px',
+        opacity: 1 - i * 0.12,
+      }}>
+        <div style={{ ...skeletonBase, width: '24px', height: '14px', flexShrink: 0 }} />
+        <div style={{ ...skeletonBase, flex: 1, height: '14px' }} />
+        <div style={{ ...skeletonBase, width: '40px', height: '14px', flexShrink: 0 }} />
+      </div>
+    ))}
+  </div>
+)
+
 // ── Inline Leaderboard (used on home screen) ──────────────────────────────────
 
 // ── Leaderboard Modal ─────────────────────────────────────────────────────────
@@ -392,9 +418,7 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         {/* Scrollable body */}
         <div style={{ overflowY: 'auto', padding: '20px 24px', flex: 1 }}>
           {loading ? (
-            <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.875rem', padding: '32px 0' }}>
-              Loading records...
-            </div>
+            <SkeletonRows count={6} />
           ) : entries.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.875rem', padding: '32px 0' }}>
               No one has been screened yet. Be the first!
@@ -662,7 +686,7 @@ const ScreenedCard: React.FC<{
         }}>
           {score}/10 correct
         </div>
-        {rank && (
+        {rank ? (
           <div style={{
             padding: '6px 16px', borderRadius: '99px',
             background: 'var(--surface)', border: '1px solid var(--border)',
@@ -672,6 +696,8 @@ const ScreenedCard: React.FC<{
               ? `#${rank.position} of ${rank.total} who stayed`
               : `#${rank.position} on the shame wall`}
           </div>
+        ) : (
+          <div style={{ ...skeletonBase, width: '140px', height: '30px', borderRadius: '99px' }} />
         )}
       </div>
 
@@ -1290,12 +1316,13 @@ const ResultScreen: React.FC<{
 
 const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = ({ onBack, hasPlayed }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [loading, setLoading] = useState(true)
   const [shareOpen, setShareOpen] = useState(false)
   const stayedRef = useRef<HTMLDivElement>(null)
   const deportedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    loadLeaderboard().then(setEntries)
+    loadLeaderboard().then(data => { setEntries(data); setLoading(false) })
   }, [])
 
   const stayed = entries
@@ -1398,7 +1425,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
             </span>
           </div>
 
-          {stayed.length === 0 ? (
+          {loading ? <SkeletonRows count={4} /> : stayed.length === 0 ? (
             <div style={{
               padding: '20px', background: 'var(--surface)',
               border: '1px solid var(--border)', borderRadius: '12px',
@@ -1446,7 +1473,7 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
         </div>
 
         {/* Deported section */}
-        {deported.length > 0 && (
+        {(loading || deported.length > 0) && (
           <div style={{ marginBottom: '28px' }}>
             <div ref={deportedRef} style={{
               display: 'flex', alignItems: 'center', gap: '8px',
@@ -1461,37 +1488,39 @@ const LeaderboardScreen: React.FC<{ onBack: () => void; hasPlayed: boolean }> = 
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {deported.map((e, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 16px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '10px',
-                  opacity: 0.8,
-                }}>
-                  <span style={{ fontSize: '0.85rem' }}>🧳</span>
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
-                    {e.name}
-                  </span>
-                  <span style={{
-                    fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
-                    color: '#ef4444', minWidth: '44px', textAlign: 'right',
+            {loading ? <SkeletonRows count={4} /> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {deported.map((e, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '10px 16px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '10px',
+                    opacity: 0.8,
                   }}>
-                    {e.score}/10
-                  </span>
-                  {e.timeSeconds != null && (
-                    <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0, minWidth: '48px', textAlign: 'right' }}>
-                      ⏱ {formatTime(e.timeSeconds)}
+                    <span style={{ fontSize: '0.85rem' }}>🧳</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem' }}>
+                      {e.name}
                     </span>
-                  )}
-                  <span className="lb-date" style={{ fontSize: '0.72rem', color: 'var(--muted)', flexShrink: 0, minWidth: '40px', textAlign: 'right' }}>
-                    {formatDate(e.date)}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <span style={{
+                      fontSize: '0.8rem', fontWeight: 700, flexShrink: 0,
+                      color: '#ef4444', minWidth: '44px', textAlign: 'right',
+                    }}>
+                      {e.score}/10
+                    </span>
+                    {e.timeSeconds != null && (
+                      <span style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0, minWidth: '48px', textAlign: 'right' }}>
+                        ⏱ {formatTime(e.timeSeconds)}
+                      </span>
+                    )}
+                    <span className="lb-date" style={{ fontSize: '0.72rem', color: 'var(--muted)', flexShrink: 0, minWidth: '40px', textAlign: 'right' }}>
+                      {formatDate(e.date)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
