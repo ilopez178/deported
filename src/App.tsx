@@ -638,10 +638,6 @@ const ScreenedCard: React.FC<{
         {passed ? 'CLEARED — YOU STAYED' : 'DEPORTED'}
       </div>
 
-      <div style={{ fontSize: '3.5rem', marginBottom: '12px' }}>
-        {passed ? '🇺🇸' : '✈️'}
-      </div>
-
       <div style={{
         fontSize: '1.4rem', fontWeight: 900, color: 'var(--white)',
         marginBottom: '4px', letterSpacing: '-0.01em',
@@ -702,7 +698,13 @@ const MenuScreen: React.FC<{
         {lastPlayed && playerResult ? (
           /* ── Returning player — show result + retake ── */
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '12px',
+            }}>
+              <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>
+                {playerResult.passed ? '🇺🇸' : '✈️'}
+              </div>
               <ShareButton />
             </div>
             <div style={{
