@@ -610,8 +610,7 @@ const ScreenedCard: React.FC<{
   score: number
   lastPlayed: number
   onRetake: () => void
-  onLeaderboard: () => void
-}> = ({ playerName, passed, score, lastPlayed, onRetake, onLeaderboard }) => {
+}> = ({ playerName, passed, score, lastPlayed, onRetake }) => {
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null)
   const [cooldownMs, setCooldownMs] = useState(() =>
     Math.max(0, RETAKE_COOLDOWN_MS - (Date.now() - lastPlayed))
@@ -718,17 +717,6 @@ const ScreenedCard: React.FC<{
         </div>
       )}
 
-      <button onClick={onLeaderboard} style={{
-        display: 'block', width: '100%', padding: '13px',
-        background: 'transparent',
-        border: `1px solid ${passed ? '#16a34a55' : '#ef444455'}`,
-        borderRadius: '12px',
-        color: passed ? '#16a34a' : '#ef4444',
-        fontSize: '0.9rem', fontWeight: 700,
-        fontFamily: 'inherit', cursor: 'pointer',
-      }}>
-        🏆 View the Federal Record
-      </button>
     </div>
   )
 }
@@ -738,8 +726,7 @@ const MenuScreen: React.FC<{
   playerName: string
   lastPlayed: number | null
   playerResult: { passed: boolean; score: number } | null
-  onLeaderboard: () => void
-}> = ({ onStart, playerName, lastPlayed, playerResult, onLeaderboard }) => {
+}> = ({ onStart, playerName, lastPlayed, playerResult }) => {
   const [showLbModal, setShowLbModal] = useState(false)
 
   return (
@@ -763,7 +750,6 @@ const MenuScreen: React.FC<{
               score={playerResult.score}
               lastPlayed={lastPlayed}
               onRetake={onStart}
-              onLeaderboard={onLeaderboard}
             />
             <button onClick={() => setShowLbModal(true)} style={{
               display: 'block', width: '100%', maxWidth: '340px', margin: '12px auto 0',
@@ -1675,7 +1661,7 @@ export default function App() {
 
   const canRetake = !lastPlayed || Date.now() - lastPlayed >= RETAKE_COOLDOWN_MS
 
-  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} playerName={playerName} lastPlayed={lastPlayed} playerResult={playerResult} onLeaderboard={goToLeaderboard} />
+  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} playerName={playerName} lastPlayed={lastPlayed} playerResult={playerResult} />
   if (screen === 'name') return <NameScreen onSubmit={launchQuiz} onBack={goToMenu} defaultName={playerName} />
   if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} hasPlayed={!canRetake} />
   if (screen === 'result') return <ResultScreen score={finalScore} playerName={playerName} onLeaderboard={goToLeaderboard} />
