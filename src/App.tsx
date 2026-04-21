@@ -702,17 +702,14 @@ const MenuScreen: React.FC<{
         {lastPlayed && playerResult ? (
           /* ── Returning player — show result + retake ── */
           <>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: '20px',
-            }}>
-              <div style={{
-                fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
-                color: 'var(--muted)', textTransform: 'uppercase', textAlign: 'left',
-              }}>
-                ⚠ U.S. Citizenship Screening System ⚠
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
               <ShareButton />
+            </div>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+              color: 'var(--muted)', marginBottom: '20px', textTransform: 'uppercase',
+            }}>
+              ⚠ U.S. Citizenship Screening System ⚠
             </div>
             <ScreenedCard
               playerName={playerName}
