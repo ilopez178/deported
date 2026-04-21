@@ -586,10 +586,11 @@ const ShareButton: React.FC = () => {
         onClick={() => setOpen(true)}
         title="Send to a Friend"
         style={{
+          position: 'absolute', top: '12px', right: '12px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '44px', height: '44px', flexShrink: 0,
+          width: '44px', height: '44px',
           background: '#ef4444', border: 'none', borderRadius: '10px',
-          cursor: 'pointer',
+          cursor: 'pointer', zIndex: 10,
         }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -698,14 +699,9 @@ const MenuScreen: React.FC<{
         {lastPlayed && playerResult ? (
           /* ── Returning player — show result + retake ── */
           <>
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: '12px',
-            }}>
-              <div style={{ fontSize: '3.5rem', lineHeight: 1 }}>
-                {playerResult.passed ? '🇺🇸' : '✈️'}
-              </div>
-              <ShareButton />
+            <ShareButton />
+            <div style={{ fontSize: '3.5rem', marginBottom: '12px' }} className="floating">
+              {playerResult.passed ? '🇺🇸' : '✈️'}
             </div>
             <div style={{
               fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
@@ -736,6 +732,7 @@ const MenuScreen: React.FC<{
         ) : (
           /* ── First-time visitor ── */
           <>
+            <ShareButton />
             <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
 
             <div style={{
