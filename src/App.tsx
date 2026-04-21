@@ -343,8 +343,47 @@ const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div style={{ padding: '24px 24px 16px', textAlign: 'center', flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🏆</div>
           <div style={{ fontWeight: 900, color: 'var(--white)', fontSize: '1.1rem' }}>Federal Screening Record</div>
-          <div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: '4px' }}>
+          <div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: '4px', marginBottom: '16px' }}>
             The official record of who stays and who goes
+          </div>
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <div style={{
+              flex: 1, padding: '12px 8px',
+              background: '#052e16', border: '1px solid #16a34a44',
+              borderRadius: '12px',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#4ade80', lineHeight: 1 }}>
+                {entries.filter(e => e.passed).length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                🇺🇸 Stayed
+              </div>
+            </div>
+            <div style={{
+              flex: 1, padding: '12px 8px',
+              background: '#1f0808', border: '1px solid #ef444444',
+              borderRadius: '12px',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f87171', lineHeight: 1 }}>
+                {entries.filter(e => !e.passed).length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                ✈️ Deported
+              </div>
+            </div>
+            <div style={{
+              flex: 1, padding: '12px 8px',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: '12px',
+            }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--white)', lineHeight: 1 }}>
+                {entries.length}
+              </div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                Total Screened
+              </div>
+            </div>
           </div>
         </div>
 
@@ -727,8 +766,8 @@ const MenuScreen: React.FC<{
             <button onClick={() => setShowLbModal(true)} style={{
               display: 'block', width: '100%', maxWidth: '340px', margin: '12px auto 0',
               padding: '11px', background: 'transparent',
-              border: '1px solid var(--border)', borderRadius: '12px',
-              color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 600,
+              border: '1px solid #ef444455', borderRadius: '12px',
+              color: '#ef4444', fontSize: '0.8rem', fontWeight: 600,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               🏆 View the Federal Record
@@ -780,8 +819,8 @@ const MenuScreen: React.FC<{
             <button onClick={() => setShowLbModal(true)} style={{
               display: 'block', width: '100%', maxWidth: '320px', margin: '0 auto',
               padding: '12px', background: 'transparent',
-              border: '1px solid var(--border)', borderRadius: '12px',
-              color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
+              border: '1px solid #ef444455', borderRadius: '12px',
+              color: '#ef4444', fontSize: '0.875rem', fontWeight: 600,
               fontFamily: 'inherit', cursor: 'pointer',
             }}>
               🏆 View the Federal Record
