@@ -586,11 +586,10 @@ const ShareButton: React.FC = () => {
         onClick={() => setOpen(true)}
         title="Send to a Friend"
         style={{
-          position: 'absolute', top: '12px', right: '12px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          width: '44px', height: '44px',
+          width: '44px', height: '44px', flexShrink: 0,
           background: '#ef4444', border: 'none', borderRadius: '10px',
-          cursor: 'pointer', flexShrink: 0, zIndex: 10,
+          cursor: 'pointer',
         }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -700,16 +699,20 @@ const MenuScreen: React.FC<{
     <div style={{ ...page, padding: '40px 24px' }}>
       <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
-        <ShareButton />
-
         {lastPlayed && playerResult ? (
           /* ── Returning player — show result + retake ── */
           <>
             <div style={{
-              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
-              color: 'var(--muted)', marginBottom: '20px', textTransform: 'uppercase',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '20px',
             }}>
-              ⚠ U.S. Citizenship Screening System ⚠
+              <div style={{
+                fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+                color: 'var(--muted)', textTransform: 'uppercase', textAlign: 'left',
+              }}>
+                ⚠ U.S. Citizenship Screening System ⚠
+              </div>
+              <ShareButton />
             </div>
             <ScreenedCard
               playerName={playerName}
