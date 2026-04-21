@@ -9,13 +9,13 @@ import { supabase } from '@/lib/supabase'
 
 const QUIZ_LENGTH = 10
 const PASS_SCORE = 7 // 70% — actual citizenship test passing threshold
-// Leaderboard is now stored in Supabase — see src/lib/supabase.ts
 const PLAYER_KEY = 'deported_player'
+const RETAKE_COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
 
-const savePlayer = (name: string, played: boolean, passed?: boolean, score?: number) =>
-  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, played, passed, score }))
+const savePlayer = (name: string, lastPlayed: number, passed?: boolean, score?: number) =>
+  localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, lastPlayed, passed, score }))
 
-const loadPlayer = (): { name: string; played: boolean; passed?: boolean; score?: number } | null => {
+const loadPlayer = (): { name: string; lastPlayed?: number; passed?: boolean; score?: number } | null => {
   try { return JSON.parse(localStorage.getItem(PLAYER_KEY) ?? 'null') } catch { return null }
 }
 
@@ -306,7 +306,9 @@ const card: React.CSSProperties = {
 
 // ── Inline Leaderboard (used on home screen) ──────────────────────────────────
 
-const InlineLeaderboard: React.FC = () => {
+// ── Leaderboard Modal ─────────────────────────────────────────────────────────
+
+const LeaderboardModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -314,114 +316,115 @@ const InlineLeaderboard: React.FC = () => {
     loadLeaderboard().then(data => { setEntries(data); setLoading(false) })
   }, [])
 
-  const allStayed = entries
+  const stayed = entries
     .filter(e => e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
-  const stayed = allStayed.slice(0, 3)
+    .slice(0, 10)
 
-  const allDeported = entries
+  const deported = entries
     .filter(e => !e.passed)
     .sort((a, b) => b.score - a.score || (a.timeSeconds ?? 9999) - (b.timeSeconds ?? 9999))
-  const deported = allDeported.slice(0, 5)
-
-  const LbSection = () => (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px',
-    }}>
-      <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-      <div style={{
-        fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.06em',
-        textTransform: 'uppercase', color: 'var(--white)',
-        display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
-      }}>
-        🏆 Federal Screening Record
-      </div>
-      <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-    </div>
-  )
-
-  if (loading) return (
-    <div style={{ marginTop: '32px' }}>
-      <LbSection />
-      <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.8rem', padding: '20px' }}>
-        Loading records...
-      </div>
-    </div>
-  )
-
-  if (entries.length === 0) return (
-    <div style={{ marginTop: '32px' }}>
-      <LbSection />
-      <div style={{
-        padding: '20px',
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: '14px', textAlign: 'center',
-      }}>
-        <div style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>
-          No one has been screened yet.<br />Be the first on the board.
-        </div>
-      </div>
-    </div>
-  )
 
   return (
-    <div style={{ marginTop: '32px', textAlign: 'left' }}>
-      <LbSection />
-
-      {stayed.length > 0 && (
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{
-            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px',
-            display: 'flex', alignItems: 'center', gap: '6px',
-          }}>🇺🇸 Stayed! <span style={{ color: '#22c55e' }}>({allStayed.length})</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {stayed.map((e, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '10px 12px',
-                background: i === 0 ? '#052e16' : 'var(--surface)',
-                border: `1px solid ${i === 0 ? '#16a34a44' : 'var(--border)'}`,
-                borderRadius: '8px',
-              }}>
-                <span style={{ fontSize: '0.75rem', minWidth: '20px', flexShrink: 0, color: 'var(--muted)' }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                </span>
-                <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e', flexShrink: 0 }}>{e.score}/10</span>
-                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
-                <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
-              </div>
-            ))}
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.8)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '24px 16px',
+      backdropFilter: 'blur(4px)',
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: 'var(--card)', border: '1px solid var(--border)',
+        borderRadius: '20px', width: '100%', maxWidth: '520px',
+        maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{ padding: '24px 24px 16px', textAlign: 'center', flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🏆</div>
+          <div style={{ fontWeight: 900, color: 'var(--white)', fontSize: '1.1rem' }}>Federal Screening Record</div>
+          <div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: '4px' }}>
+            The official record of who stays and who goes
           </div>
         </div>
-      )}
 
-      {deported.length > 0 && (
-        <div>
-          <div style={{
-            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-            textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px',
-            display: 'flex', alignItems: 'center', gap: '6px',
-          }}>✈️ Deported! <span style={{ color: '#ef4444' }}>({allDeported.length})</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {deported.map((e, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '10px 12px',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: '8px', opacity: 0.75,
-              }}>
-                <span style={{ fontSize: '0.8rem', flexShrink: 0 }}>🧳</span>
-                <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{e.score}/10</span>
-                {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
-                <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
-              </div>
-            ))}
-          </div>
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', padding: '20px 24px', flex: 1 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.875rem', padding: '32px 0' }}>
+              Loading records...
+            </div>
+          ) : entries.length === 0 ? (
+            <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.875rem', padding: '32px 0' }}>
+              No one has been screened yet. Be the first!
+            </div>
+          ) : (
+            <>
+              {stayed.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#22c55e', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🇺🇸 Stayed! <span style={{ color: '#22c55e' }}>({stayed.length})</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {stayed.map((e, i) => (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 14px',
+                        background: i === 0 ? '#052e16' : 'var(--surface)',
+                        border: `1px solid ${i === 0 ? '#16a34a44' : 'var(--border)'}`,
+                        borderRadius: '8px',
+                      }}>
+                        <span style={{ fontSize: '0.75rem', minWidth: '20px', flexShrink: 0, color: 'var(--muted)' }}>
+                          {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                        </span>
+                        <span style={{ flex: 1, fontWeight: 700, color: 'var(--white)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e', flexShrink: 0 }}>{e.score}/10</span>
+                        {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                        <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {deported.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    ✈️ Deported! <span style={{ color: '#ef4444' }}>({deported.length})</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {deported.map((e, i) => (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 14px',
+                        background: 'var(--surface)', border: '1px solid var(--border)',
+                        borderRadius: '8px', opacity: 0.75,
+                      }}>
+                        <span style={{ fontSize: '0.8rem', flexShrink: 0 }}>🧳</span>
+                        <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.name}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>{e.score}/10</span>
+                        {e.timeSeconds != null && <span style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 600, flexShrink: 0 }}>⏱ {formatTime(e.timeSeconds)}</span>}
+                        <span className="lb-date" style={{ fontSize: '0.68rem', color: 'var(--muted)', flexShrink: 0 }}>{formatDate(e.date)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
+
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+          <button onClick={onClose} style={{
+            width: '100%', padding: '12px', background: 'transparent',
+            border: '1px solid #ef444455', borderRadius: '12px',
+            color: '#ef4444', fontSize: '0.875rem', fontWeight: 600,
+            fontFamily: 'inherit', cursor: 'pointer',
+          }}>
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -564,9 +567,14 @@ const ScreenedCard: React.FC<{
   playerName: string
   passed: boolean
   score: number
+  lastPlayed: number
+  onRetake: () => void
   onLeaderboard: () => void
-}> = ({ playerName, passed, score, onLeaderboard }) => {
+}> = ({ playerName, passed, score, lastPlayed, onRetake, onLeaderboard }) => {
   const [rank, setRank] = useState<{ position: number; total: number } | null>(null)
+  const [cooldownMs, setCooldownMs] = useState(() =>
+    Math.max(0, RETAKE_COOLDOWN_MS - (Date.now() - lastPlayed))
+  )
 
   useEffect(() => {
     loadLeaderboard().then(entries => {
@@ -577,6 +585,20 @@ const ScreenedCard: React.FC<{
       if (idx !== -1) setRank({ position: idx + 1, total: list.length })
     })
   }, [playerName, passed])
+
+  useEffect(() => {
+    if (cooldownMs <= 0) return
+    const id = setInterval(() => {
+      const remaining = Math.max(0, RETAKE_COOLDOWN_MS - (Date.now() - lastPlayed))
+      setCooldownMs(remaining)
+      if (remaining <= 0) clearInterval(id)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [lastPlayed])
+
+  const canRetake = cooldownMs <= 0
+  const cooldownMins = Math.floor(cooldownMs / 60000)
+  const cooldownSecs = Math.floor((cooldownMs % 60000) / 1000)
 
   const tier = getTier(score)
 
@@ -636,7 +658,25 @@ const ScreenedCard: React.FC<{
         )}
       </div>
 
-      {/* Ghost CTA */}
+      {/* Retake or cooldown */}
+      {canRetake ? (
+        <button onClick={onRetake} className="primary-btn" style={{ marginBottom: '10px' }}>
+          Retake the Test →
+        </button>
+      ) : (
+        <div style={{
+          padding: '12px 16px', marginBottom: '10px',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: '12px', textAlign: 'center',
+          fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 600,
+        }}>
+          Retake available in{' '}
+          <span style={{ color: 'var(--white)', fontVariantNumeric: 'tabular-nums' }}>
+            {cooldownMins}:{cooldownSecs.toString().padStart(2, '0')}
+          </span>
+        </div>
+      )}
+
       <button onClick={onLeaderboard} style={{
         display: 'block', width: '100%', padding: '13px',
         background: 'transparent',
@@ -654,86 +694,111 @@ const ScreenedCard: React.FC<{
 
 const MenuScreen: React.FC<{
   onStart: () => void
-  hasPlayed: boolean
   playerName: string
+  lastPlayed: number | null
   playerResult: { passed: boolean; score: number } | null
   onLeaderboard: () => void
-}> = ({ onStart, hasPlayed, playerName, playerResult, onLeaderboard }) => (
-  <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
-    <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
+}> = ({ onStart, playerName, lastPlayed, playerResult, onLeaderboard }) => {
+  const [showLbModal, setShowLbModal] = useState(false)
 
-      <ShareButton />
+  return (
+    <div style={{ ...page, alignItems: 'flex-start', paddingTop: '40px', paddingBottom: '40px' }}>
+      <div style={{ ...card, maxWidth: '520px', textAlign: 'center', position: 'relative' }} className="slide-in">
 
-      {hasPlayed && playerResult ? (
-        /* ── Already screened — show result only ── */
-        <>
-          <div style={{
-            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
-            color: 'var(--muted)', marginBottom: '20px', textTransform: 'uppercase',
-          }}>
-            ⚠ U.S. Citizenship Screening System ⚠
-          </div>
-          <ScreenedCard
-            playerName={playerName}
-            passed={playerResult.passed}
-            score={playerResult.score}
-            onLeaderboard={onLeaderboard}
-          />
-          <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.6 }}>
-            Based on actual citizenship test questions.<br />
-            No lawyers were harmed in the making of this quiz.
-          </p>
-        </>
-      ) : (
-        /* ── Not yet screened — full intro + leaderboard ── */
-        <>
-          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
+        <ShareButton />
 
-          <div style={{
-            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
-            color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
-          }} className="siren">
-            ⚠ U.S. Citizenship Screening System ⚠
-          </div>
+        {lastPlayed && playerResult ? (
+          /* ── Returning player — show result + retake ── */
+          <>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+              color: 'var(--muted)', marginBottom: '20px', textTransform: 'uppercase',
+            }}>
+              ⚠ U.S. Citizenship Screening System ⚠
+            </div>
+            <ScreenedCard
+              playerName={playerName}
+              passed={playerResult.passed}
+              score={playerResult.score}
+              lastPlayed={lastPlayed}
+              onRetake={onStart}
+              onLeaderboard={onLeaderboard}
+            />
+            <button onClick={() => setShowLbModal(true)} style={{
+              display: 'block', width: '100%', maxWidth: '340px', margin: '12px auto 0',
+              padding: '11px', background: 'transparent',
+              border: '1px solid var(--border)', borderRadius: '12px',
+              color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 600,
+              fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              🏆 View the Federal Record
+            </button>
+            <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '20px', lineHeight: 1.6 }}>
+              Based on actual citizenship test questions.<br />
+              No lawyers were harmed in the making of this quiz.
+            </p>
+          </>
+        ) : (
+          /* ── First-time visitor ── */
+          <>
+            <div style={{ fontSize: '3.5rem', marginBottom: '16px' }} className="floating">🚨</div>
 
-          <h1 style={{
-            fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 900,
-            color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
-            letterSpacing: '-0.02em',
-          }}>
-            Should You Get<br />
-            <span style={{ color: '#ef4444' }}>Deported?</span>
-          </h1>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.18em',
+              color: '#ef4444', marginBottom: '16px', textTransform: 'uppercase',
+            }} className="siren">
+              ⚠ U.S. Citizenship Screening System ⚠
+            </div>
 
-          <p style={{
-            color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
-            maxWidth: '380px', margin: '0 auto 4px',
-          }}>
-            {QUIZ_LENGTH} random U.S. citizenship test questions.{' '}
-            You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
-          </p>
-          <p style={{
-            color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.5,
-            maxWidth: '380px', margin: '0 auto 28px',
-          }}>
-            How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
-          </p>
+            <h1 style={{
+              fontSize: 'clamp(2rem, 6vw, 2.8rem)', fontWeight: 900,
+              color: 'var(--white)', marginBottom: '8px', lineHeight: 1.1,
+              letterSpacing: '-0.02em',
+            }}>
+              Should You Get<br />
+              <span style={{ color: '#ef4444' }}>Deported?</span>
+            </h1>
 
-          <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto', display: 'block' }}>
-            Begin Screening →
-          </button>
+            <p style={{
+              color: 'var(--text)', fontSize: '1.05rem', lineHeight: 1.7,
+              maxWidth: '380px', margin: '0 auto 4px',
+            }}>
+              {QUIZ_LENGTH} random U.S. citizenship test questions.{' '}
+              You need <strong style={{ color: 'var(--white)' }}>{PASS_SCORE} right</strong> to stay in America.
+            </p>
+            <p style={{
+              color: 'var(--text)', fontSize: '0.9375rem', lineHeight: 1.5,
+              maxWidth: '380px', margin: '0 auto 28px',
+            }}>
+              How American are <em style={{ color: 'var(--white)', fontStyle: 'italic' }}>you</em>, really?
+            </p>
 
-          <InlineLeaderboard />
+            <button onClick={onStart} className="primary-btn" style={{ maxWidth: '320px', margin: '0 auto 12px', display: 'block' }}>
+              Begin Screening →
+            </button>
 
-          <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '20px', lineHeight: 1.6 }}>
-            Based on actual citizenship test questions.<br />
-            No lawyers were harmed in the making of this quiz.
-          </p>
-        </>
-      )}
+            <button onClick={() => setShowLbModal(true)} style={{
+              display: 'block', width: '100%', maxWidth: '320px', margin: '0 auto',
+              padding: '12px', background: 'transparent',
+              border: '1px solid var(--border)', borderRadius: '12px',
+              color: 'var(--muted)', fontSize: '0.875rem', fontWeight: 600,
+              fontFamily: 'inherit', cursor: 'pointer',
+            }}>
+              🏆 View the Federal Record
+            </button>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text)', marginTop: '24px', lineHeight: 1.6 }}>
+              Based on actual citizenship test questions.<br />
+              No lawyers were harmed in the making of this quiz.
+            </p>
+          </>
+        )}
+      </div>
+
+      {showLbModal && <LeaderboardModal onClose={() => setShowLbModal(false)} />}
     </div>
-  </div>
-)
+  )
+}
 
 // ── Name Screen ───────────────────────────────────────────────────────────────
 
@@ -1414,21 +1479,21 @@ export default function App() {
   const [playerName, setPlayerName] = useState('')
   const [quiz, setQuiz] = useState<QuizState | null>(null)
   const [finalScore, setFinalScore] = useState(0)
-  const [hasPlayed, setHasPlayed] = useState(() => loadPlayer()?.played ?? false)
+  const [lastPlayed, setLastPlayed] = useState<number | null>(() => loadPlayer()?.lastPlayed ?? null)
   const [playerResult, setPlayerResult] = useState<{ passed: boolean; score: number } | null>(() => {
     const p = loadPlayer()
-    return p?.played && p.passed !== undefined && p.score !== undefined
+    return p?.lastPlayed && p.passed !== undefined && p.score !== undefined
       ? { passed: p.passed, score: p.score }
       : null
   })
 
-  // Restore name on load
+  // Restore player from localStorage on load
   useEffect(() => {
     const player = loadPlayer()
     if (player) {
       setPlayerName(player.name)
-      setHasPlayed(player.played ?? false)
-      if (player.played && player.passed !== undefined && player.score !== undefined) {
+      setLastPlayed(player.lastPlayed ?? null)
+      if (player.lastPlayed && player.passed !== undefined && player.score !== undefined) {
         setPlayerResult({ passed: player.passed, score: player.score })
       }
     }
@@ -1485,8 +1550,9 @@ export default function App() {
       }),
       logPlay(playerName, quiz.score, tier.pass),
     ])
-    savePlayer(playerName, true, tier.pass, quiz.score)
-    setHasPlayed(true)
+    const now = Date.now()
+    savePlayer(playerName, now, tier.pass, quiz.score)
+    setLastPlayed(now)
     setPlayerResult({ passed: tier.pass, score: quiz.score })
     setFinalScore(quiz.score)
     setScreen('result')
@@ -1507,8 +1573,9 @@ export default function App() {
         }),
         logPlay(playerName, quiz.score, tier.pass),
       ])
-      savePlayer(playerName, true, tier.pass, quiz.score)
-      setHasPlayed(true)
+      const now = Date.now()
+      savePlayer(playerName, now, tier.pass, quiz.score)
+      setLastPlayed(now)
       setPlayerResult({ passed: tier.pass, score: quiz.score })
       setFinalScore(quiz.score)
       setScreen('result')
@@ -1523,9 +1590,11 @@ export default function App() {
     }
   }, [quiz, playerName])
 
-  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} hasPlayed={hasPlayed} playerName={playerName} playerResult={playerResult} onLeaderboard={goToLeaderboard} />
+  const canRetake = !lastPlayed || Date.now() - lastPlayed >= RETAKE_COOLDOWN_MS
+
+  if (screen === 'menu') return <MenuScreen onStart={() => setScreen('name')} playerName={playerName} lastPlayed={lastPlayed} playerResult={playerResult} onLeaderboard={goToLeaderboard} />
   if (screen === 'name') return <NameScreen onSubmit={launchQuiz} onBack={goToMenu} defaultName={playerName} />
-  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} hasPlayed={hasPlayed} />
+  if (screen === 'leaderboard') return <LeaderboardScreen onBack={goToMenu} hasPlayed={!canRetake} />
   if (screen === 'result') return <ResultScreen score={finalScore} playerName={playerName} onLeaderboard={goToLeaderboard} />
 
   if (!quiz) return null
